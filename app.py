@@ -9,7 +9,12 @@ st.set_page_config(page_title="Logically Human | Premium Audit", layout="wide")
 # --- UI & CSS ---
 st.markdown("""
     <style>
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #eee; }
+    div[data-testid="metric-container"] {
+        background-color: rgba(128, 128, 128, 0.1);
+        padding: 15px; 
+        border-radius: 10px; 
+        border: 1px solid rgba(128, 128, 128, 0.2); 
+    }
     </style>
     """, unsafe_allow_html=True)
 
