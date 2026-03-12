@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import networkx as nx
 
-st.set_page_config(page_title="Logically Human | Premium Audit", layout="wide")
+st.set_page_config(page_title="Team Scientist | Premium Audit", layout="wide")
 
 # --- UI & CSS ---
 st.markdown("""
@@ -29,7 +29,7 @@ st.sidebar.selectbox("Limbă / Language", ["Română", "English"], key="lang_sel
 
 texts = {
     "Română": {
-        "title": "🧠 Logically Human | Diagnostic Strategic",
+        "title": "🧠 Team Scientist | Diagnostic Strategic",
         "upload": "Încarcă fișierul Excel (13 coloane, inclusiv 'Sfat_De_La')",
         "err_col": "❌ Lipsesc coloanele:",
         "b_title": "🔥 Burnout",
