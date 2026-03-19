@@ -380,16 +380,16 @@ def fmt_cost(salary_monthly, t):
 
 def insight_card(text, level="info"):
     colors = {
-        "critical": ("#FDEDEC", "#C0392B", "⚠"),
-        "warning":  ("#FEF9E7", "#E67E22", "◉"),
-        "ok":       ("#EAFAF1", "#1E8449", "✓"),
-        "info":     ("#EBF5FB", "#2471A3", "→"),
+        "critical": ("#FDEDEC", "#C0392B", "⚠", "#7B241C"),
+        "warning":  ("#FEF9E7", "#E67E22", "◉", "#784212"),
+        "ok":       ("#EAFAF1", "#1E8449", "✓", "#1D6A39"),
+        "info":     ("#EBF5FB", "#2471A3", "→", "#1A5276"),
     }
-    bg, border, icon = colors.get(level, colors["info"])
+    bg, border, icon, text_color = colors.get(level, colors["info"])
     st.markdown(
         f"<div style='background:{bg};border-left:3px solid {border};"
         f"border-radius:0 8px 8px 0;padding:12px 16px;margin:6px 0;"
-        f"font-size:14px;line-height:1.6'>"
+        f"font-size:14px;line-height:1.6;color:{text_color}'>"
         f"<span style='color:{border};margin-right:8px'>{icon}</span>{text}</div>",
         unsafe_allow_html=True
     )
