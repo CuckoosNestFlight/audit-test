@@ -399,7 +399,7 @@ def action_card(text):
     st.markdown(
         f"<div style='background:#F4F6F7;border:1px solid #D5D8DC;"
         f"border-radius:8px;padding:12px 16px;margin:4px 0;"
-        f"font-size:13px;line-height:1.6'>"
+        f"font-size:13px;line-height:1.6;color:#2C3E50'>"
         f"<span style='color:#E67E22;margin-right:8px;font-weight:600'>→</span>{text}</div>",
         unsafe_allow_html=True
     )
