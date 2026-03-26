@@ -29,74 +29,159 @@ st.sidebar.selectbox(
     key="lang_select", on_change=change_lang
 )
 
-salary = st.sidebar.number_input(
-    "Salariu mediu lunar estimat (€)" if st.session_state.lang == "Română"
-    else "Estimated avg monthly salary (€)",
-    value=3000, step=500,
-    help="Folosit pentru estimarea costului de înlocuire."
-    if st.session_state.lang == "Română"
-    else "Used to estimate replacement cost in Leaving Risk."
+lang = st.session_state.lang
+
+# ── SIDEBAR — CONCEPTE ───────────────────────────────────────
+with st.sidebar.expander("ℹ️ Ce măsurăm" if lang == "Română" else "ℹ️ What we measure", expanded=False):
+    if lang == "Română":
+        st.markdown("""
+**🧩 Insights** — Sinteza datelor: urgențe, tipare de echipă și acțiuni recomandate.
+
+**🔥 Stres & Burnout** — Riscul de epuizare cronică bazat pe ore lucrate, concediu efectuat, energie și presiune externă.
+
+**🤐 Masca Politicoasă** — Siguranța psihologică: cât de mult se simt oamenii în siguranță să greșească și să propună idei.
+
+**✈️ Risc Plecare** — Probabilitatea de plecare bazată pe stagnare financiară, stare de bine și importanța în rețea.
+
+**🕸️ Rețeaua de Relații** — Cine consultă pe cine informal. Identifică hub-uri, noduri izolate și silozuri de colaborare.
+""")
+    else:
+        st.markdown("""
+**🧩 Insights** — Data synthesis: urgencies, team patterns and recommended actions.
+
+**🔥 Stress & Burnout** — Chronic burnout risk based on hours worked, vacation taken, energy and external pressure.
+
+**🤐 Polite Mask** — Psychological safety: how safe people feel to admit mistakes and propose ideas.
+
+**✈️ Leaving Risk** — Departure probability based on financial stagnation, wellbeing and network importance.
+
+**🕸️ Relationship Network** — Who consults whom informally. Identifies hubs, isolated nodes and collaboration silos.
+""")
+
+# ── SIDEBAR — SALARIU ────────────────────────────────────────
+st.sidebar.markdown("---")
+salary_label = "Salariu mediu lunar estimat (€)" if lang == "Română" else "Estimated avg monthly salary (€)"
+salary_help = (
+    "Opțional. Folosit pentru estimarea costului de înlocuire a unui angajat. Nu este obligatoriu pentru audit."
+    if lang == "Română" else
+    "Optional. Used to estimate employee replacement cost. Not required for the audit."
+)
+salary = st.sidebar.number_input(salary_label, value=3000, step=500, help=salary_help)
+
+# ── SIDEBAR — DISCLAIMER ─────────────────────────────────────
+st.sidebar.markdown("---")
+if lang == "Română":
+    st.sidebar.caption(
+        "⚠️ Concluziile din acest raport sunt extrase din date și reprezintă indicatori de analiză, "
+        "nu verdicte. Se recomandă discuții directe cu oamenii și analize suplimentare înainte de orice decizie."
+    )
+else:
+    st.sidebar.caption(
+        "⚠️ The conclusions in this report are data-driven indicators, not verdicts. "
+        "Direct conversations with team members and further analysis are recommended before any decision."
+    )
+
+# ── SIDEBAR — TEST MODE ──────────────────────────────────────
+st.sidebar.markdown("---")
+test_mode = st.sidebar.checkbox(
+    "🧪 Sesiune de test / demo" if lang == "Română" else "🧪 Test / demo session",
+    value=False,
+    help="Bifează pentru sesiuni de test. Datele nu vor fi înregistrate." if lang == "Română"
+    else "Check for test sessions. Data will not be recorded."
 )
 
 # ── TRADUCERI UI ─────────────────────────────────────────────
 UI = {
     "Română": {
         "title":   "🔬 Team Scientist | Diagnostic Strategic",
-        "upload":  "Încarcă fișierul TeamScientist_Audit_Demo_v2.xlsx",
-        "err_col": "❌ Lipsesc coloanele:",
-        "b_title": "🔥 Burnout",
-        "s_title": "🤐 Masca Politicoasă",
-        "f_title": "✈️ Risc Plecare",
-        "o_title": "🕸️ Rețeaua (ONA)",
-        "i_title": "🧩 Insights",
-        "b_desc":  "Scor 0–100. Peste 70 = Risc Critic | 50–70 = Atenție.",
-        "b_legend":"Roșu = critic (>70) | Galben = atenție (50–70) | Verde = OK (<50)",
-        "s_q1":    "Autentic & Sigur",
-        "s_q2":    "Safe but Silent",
-        "s_q3":    "Risc Cultural",
-        "s_q4":    "Tăcere Critică",
-        "s_desc":  "Axa X = Siguranță psihologică declarată | Axa Y = Comportamente observabile (erori + idei)",
-        "f_desc":  "Scor 0–100. Peste 65 = Risc Mare | 40–65 = Monitorizare.",
-        "f_cost":  "Înlocuirea unui angajat costă 6–12 luni de productivitate.",
-        "o_desc":  "Dimensiunea nodului = câți colegi te consultă | Culoarea = risc burnout",
-        "o_legend":"Nod mare + roșu = hub supraîncărcat (risc sistemic)",
+        "upload":  "Încarcă fișierul Excel cu datele echipei",
+        "err_col": "❌ Lipsesc coloanele obligatorii:",
+        "warn_hours": "⚠ Ore > 80h/săpt detectate — verifică datele introduse.",
+        "warn_vacation": "⚠ Zile concediu > 30 detectate — posibil eroare de input.",
+        "warn_ona": "⚠ Peste 50% din angajați nu au conexiuni ONA — rețeaua poate fi incompletă.",
+        "tab1": "🧩 Insights",
+        "tab2": "🔥 Stres & Burnout",
+        "tab3": "🤐 Masca Politicoasă",
+        "tab4": "✈️ Risc Plecare",
+        "tab5": "🕸️ Rețeaua de Relații",
+        "b_desc":  "Scor 0–100. Peste 70 = Risc Ridicat | 50–70 = Atenție.",
+        "b_legend":"Roșu = risc ridicat (>70) | Galben = atenție (50–70) | Verde = în parametri (<50)",
+        "s_title_chart": "Harta siguranței psihologice",
+        "s_desc":  (
+            "Fiecare punct reprezintă un angajat. "
+            "**Axa X (orizontală):** cât de des recunoaște greșeli în fața echipei (1 = deloc, 5 = deschis). "
+            "**Axa Y (verticală):** cât de des propune idei și inițiative noi (1 = rar, 5 = frecvent). "
+            "**Mărimea punctului:** proporțională cu riscul de mască politicoasă — cu cât e mai mare, cu atât omul tace mai mult. "
+            "**Culoarea:** intensitatea riscului (portocaliu închis = risc ridicat). "
+            "Stânga-jos = tăcere critică pe ambele dimensiuni. Dreapta-sus = colaborare autentică."
+        ),
+        "s_q_tl":  "Creativ / Defensiv",
+        "s_q_tr":  "Autentic & Sigur",
+        "s_q_bl":  "Tăcere Critică",
+        "s_q_br":  "Safe but Silent",
+        "f_desc":  "Scor 0–100. Peste 65 = Risc Ridicat | 40–65 = Monitorizare.",
+        "f_cost":  "Înlocuirea unui angajat costă în medie 6–12 luni de productivitate și costuri de recrutare.",
+        "o_desc":  "Dimensiunea nodului = câți colegi te consultă (in-degree) | Culoarea = risc burnout",
+        "o_arrow": "Săgeata indică direcția consultării: de la cel care întreabă spre cel consultat.",
     },
     "English": {
         "title":   "🔬 Team Scientist | Strategic Diagnostic",
-        "upload":  "Upload TeamScientist_Audit_Demo_v2.xlsx",
-        "err_col": "❌ Missing columns:",
-        "b_title": "🔥 Burnout",
-        "s_title": "🤐 Polite Mask",
-        "f_title": "✈️ Flight Risk",
-        "o_title": "🕸️ Network (ONA)",
-        "i_title": "🧩 Insights",
-        "b_desc":  "Score 0–100. Over 70 = Critical Risk | 50–70 = Warning.",
-        "b_legend":"Red = critical (>70) | Yellow = warning (50–70) | Green = OK (<50)",
-        "s_q1":    "Authentic & Safe",
-        "s_q2":    "Safe but Silent",
-        "s_q3":    "Cultural Risk",
-        "s_q4":    "Critical Silence",
-        "s_desc":  "X axis = declared psychological safety | Y axis = observable behaviors (errors + ideas)",
-        "f_desc":  "Score 0–100. Over 65 = High Risk | 40–65 = Monitor.",
-        "f_cost":  "Replacing one employee costs 6–12 months of productivity.",
-        "o_desc":  "Node size = how many colleagues consult you | Color = burnout risk",
-        "o_legend":"Large + red node = overloaded hub (systemic risk)",
+        "upload":  "Upload your team data Excel file",
+        "err_col": "❌ Missing required columns:",
+        "warn_hours": "⚠ Hours > 80h/week detected — please check the data.",
+        "warn_vacation": "⚠ Vacation days > 30 detected — possible input error.",
+        "warn_ona": "⚠ Over 50% of employees have no ONA connections — network may be incomplete.",
+        "tab1": "🧩 Insights",
+        "tab2": "🔥 Stress & Burnout",
+        "tab3": "🤐 Polite Mask",
+        "tab4": "✈️ Leaving Risk",
+        "tab5": "🕸️ Relationship Network",
+        "b_desc":  "Score 0–100. Over 70 = Elevated Risk | 50–70 = Warning.",
+        "b_legend":"Red = elevated risk (>70) | Yellow = warning (50–70) | Green = within range (<50)",
+        "s_title_chart": "Psychological safety map",
+        "s_desc":  (
+            "Each dot represents one employee. "
+            "**Horizontal axis (X):** how often they acknowledge mistakes in front of the team (1 = never, 5 = openly). "
+            "**Vertical axis (Y):** how often they propose new ideas and initiatives (1 = rarely, 5 = frequently). "
+            "**Dot size:** proportional to polite mask risk — the larger the dot, the more the person stays silent. "
+            "**Color:** risk intensity (dark orange = high risk). "
+            "Bottom-left = critical silence on both dimensions. Top-right = authentic collaboration."
+        ),
+        "s_q_tl":  "Creative / Defensive",
+        "s_q_tr":  "Authentic & Safe",
+        "s_q_bl":  "Critical Silence",
+        "s_q_br":  "Safe but Silent",
+        "f_desc":  "Score 0–100. Over 65 = Elevated Risk | 40–65 = Monitor.",
+        "f_cost":  "Replacing one employee costs on average 6–12 months of productivity and recruitment costs.",
+        "o_desc":  "Node size = how many colleagues consult you (in-degree) | Color = burnout risk",
+        "o_arrow": "Arrow direction: from the person asking toward the person being consulted.",
     }
 }
 
-# ── COLOANE OBLIGATORII ──────────────────────────────────────
 REQUIRED_COLUMNS = [
     'Nume', 'Ore_Saptamana', 'Presiune_Externa', 'Idei_Noi',
     'Erori_Asumate', 'Ultima_Marire', 'Scor_Energie',
     'Zile_Concediu', 'Sfat_De_La'
 ]
 
+PLACEHOLDER_NAMES = ['cod anonim', 'ex:', 'exemplu', 'sample', 'test', 'angajat_ex']
+
 # ════════════════════════════════════════════════════════════
-# FORMULE (formulas.py integrat)
+# FORMULE
 # ════════════════════════════════════════════════════════════
 
 def compute_indicators(df):
     df = df.copy()
+
+    # Elimină rânduri placeholder
+    mask_placeholder = df['Nume'].astype(str).str.lower().apply(
+        lambda x: any(p in x for p in PLACEHOLDER_NAMES)
+    )
+    df = df[~mask_placeholder].copy()
+    df = df[df['Nume'].astype(str).str.strip() != ''].copy()
+    df = df.dropna(subset=['Nume']).copy()
+    df = df.reset_index(drop=True)
+
     num_cols = [
         'Ore_Saptamana', 'Presiune_Externa', 'Idei_Noi', 'Erori_Asumate',
         'Vechime_Rol', 'Ultima_Marire', 'Scor_Energie', 'Zile_Concediu'
@@ -112,28 +197,27 @@ def compute_indicators(df):
     df['Idei_Noi']         = df['Idei_Noi'].fillna(3)
     df['Erori_Asumate']    = df['Erori_Asumate'].fillna(3)
     df['Ore_Saptamana']    = df['Ore_Saptamana'].fillna(40)
-    df['Vechime_Rol']      = df['Vechime_Rol'].fillna(1) if 'Vechime_Rol' in df.columns else df.assign(Vechime_Rol=12)['Vechime_Rol']
+    if 'Vechime_Rol' not in df.columns:
+        df['Vechime_Rol'] = 12
+    else:
+        df['Vechime_Rol'] = df['Vechime_Rol'].fillna(12)
 
     # BURNOUT
     S_hours    = ((df['Ore_Saptamana'] - 40) / 20 * 100).clip(0, 100)
     S_vacation = ((20 - df['Zile_Concediu']) / 20 * 100).clip(0, 100)
     S_energy   = ((5 - df['Scor_Energie']) / 4 * 100).clip(0, 100)
     S_pressure = ((df['Presiune_Externa'] - 1) / 4 * 100).clip(0, 100)
-
     df['B_Score'] = (
-        0.30 * S_hours +
-        0.20 * S_vacation +
-        0.25 * S_energy +
-        0.25 * S_pressure
+        0.30 * S_hours + 0.20 * S_vacation +
+        0.25 * S_energy + 0.25 * S_pressure
     ).clip(0, 100).round(1)
 
     # POLITE MASK
     mask_raw      = (df['Erori_Asumate'] + df['Idei_Noi']) / 2
     df['S_Raw']   = mask_raw.round(2)
     df['S_Score'] = ((5 - mask_raw) / 4 * 100).clip(0, 100).round(1)
-    df['S_Diss']  = df['S_Score']
-    df['S_Size']  = (df['S_Score'] / 10 + 5).clip(5, 20)
     df['S_Contr'] = mask_raw
+    df['S_Size']  = (df['S_Score'] / 10 + 5).clip(5, 20)
 
     # ONA
     G = nx.DiGraph()
@@ -154,251 +238,219 @@ def compute_indicators(df):
     S_ona = (df['ONA_InDegree'] / max_possible * 100).clip(0, 100)
 
     # LEAVING RISK
-    vec = df['Vechime_Rol'].clip(lower=1) if 'Vechime_Rol' in df.columns else pd.Series([12] * n)
-    S_stagnation = (df['Ultima_Marire'] / vec * 100).clip(0, 100)
+    S_stagnation = (df['Ultima_Marire'] / df['Vechime_Rol'].clip(lower=1) * 100).clip(0, 100)
     S_wellbeing  = (((5 - df['Scor_Energie']) + (df['Presiune_Externa'] - 1)) / 8 * 100).clip(0, 100)
-
     df['F_Score'] = (
-        0.40 * S_stagnation +
-        0.40 * S_wellbeing +
-        0.20 * S_ona
+        0.40 * S_stagnation + 0.40 * S_wellbeing + 0.20 * S_ona
     ).clip(0, 100).round(1)
 
     return df, G
 
 
-def burnout_label(score):
-    if score > 70: return "🔴 Critic"
-    if score > 50: return "🟡 Atenție"
-    return "🟢 OK"
-
-def leaving_label(score):
-    if score > 65: return "🔴 Risc Mare"
-    if score > 40: return "🟡 Monitorizare"
-    return "🟢 Stabil"
-
-def mask_label_raw(raw):
-    if raw < 3:  return "🔴 Zonă Critică"
-    if raw <= 4: return "🟡 Safe but Silent"
-    return "🟢 Autentic & Sigur"
-
-
 # ════════════════════════════════════════════════════════════
-# INSIGHTS ENGINE (insights_engine.py integrat)
+# INSIGHTS ENGINE
 # ════════════════════════════════════════════════════════════
 
 TEXTS = {
     "Română": {
-        "exec_title":   "Rezumat executiv",
-        "exec_all_ok":  "Echipa funcționează în parametri normali. Niciun risc critic identificat.",
-        "exec_some_risk": "Au fost identificate {n_risk} situații care necesită atenție în 30 de zile.",
-        "exec_critical": "{n_critical} angajat(ți) în zonă critică — intervenție imediată.",
-        "sec_urgent":   "Urgențe — intervenție imediată",
-        "sec_monitor":  "Monitorizare activă — 30 de zile",
-        "sec_patterns": "Tipare la nivel de echipă",
-        "sec_ok":       "Ce funcționează bine",
-        "action_title": "Ce faci concret — această săptămână",
-        "pattern_cultural_silence": "Problemă culturală de siguranță psihologică",
+        "exec_title":    "Rezumat executiv",
+        "key_insights":  "Concluzii cheie",
+        "exec_all_ok":   "Echipa funcționează în parametri normali. Niciun risc semnificativ identificat în acest ciclu de analiză.",
+        "exec_critical": "{n_critical} angajat(ți) prezintă indicatori care sugerează intervenție imediată.",
+        "exec_some_risk":"Au fost identificate {n_risk} situații care merită atenție în perioada următoare.",
+        "sec_urgent":    "Situații care sugerează intervenție imediată",
+        "sec_monitor":   "De urmărit în următoarele 30 de zile",
+        "sec_patterns":  "Tipare la nivel de echipă",
+        "sec_ok":        "Ce pare să funcționeze bine",
+        "action_title":  "Ce poți face concret — sugestii pentru perioada imediat următoare",
+        "action_w1":     "🔴 Prioritar — această săptămână",
+        "action_w2":     "🟡 Important — în 30 de zile",
+        "action_w3":     "🟢 De monitorizat",
+        "pattern_cultural_silence": "Posibilă problemă de microcultură — siguranță psihologică",
         "pattern_cultural_silence_desc": (
-            "{pct}% din echipă are scor Polite Mask sub 3. "
-            "Aceasta indică o problemă sistemică de cultură, nu individuală. "
-            "Oamenii tac pentru că nu se simt în siguranță să greșească sau să propună. "
-            "Intervenția necesară este la nivel de echipă, nu per angajat."
+            "{pct}% din echipă are scor Polite Mask sub 3. Aceasta poate indica o problemă sistemică "
+            "de microcultură, nu individuală. Oamenii tac pentru că nu se simt în siguranță să greșească "
+            "sau să propună. Intervenția necesară este la nivel de echipă, nu de angajat. "
+            "De luat în calcul și alți factori care nu sunt incluși aici (de exemplu vechimea)."
         ),
         "pattern_hub_risk": "Nod central supraîncărcat — risc sistemic",
         "pattern_hub_risk_desc": (
-            "{name} este consultat de {n_conn} colegi și are simultan burnout ridicat ({b:.0f}) "
-            "și risc de plecare ridicat ({f:.0f}). "
-            "Dacă această persoană pleacă, fluxul informal de cunoaștere al echipei se întrerupe brusc. "
-            "Acesta este cel mai costisitor scenariu de risc din audit."
+            "{name} este consultat de {n_conn} colegi și prezintă simultan indicatori ridicați "
+            "de stres & burnout ({b:.0f}/100) și risc de plecare ({f:.0f}/100). "
+            "Dacă această persoană pleacă sau se epuizează, fluxul informal de cunoaștere al echipei "
+            "se poate întrerupe brusc. Acesta este cel mai costisitor scenariu de risc din această analiză."
         ),
-        "pattern_isolation": "Izolare totală — deconectare dublă",
+        "pattern_isolation": "Deconectare dublă — izolare și tăcere",
         "pattern_isolation_desc": (
-            "{names} prezintă izolare în rețea combinată cu mască politicoasă. "
-            "Nu cer ajutor și nu contribuie — semnal timpuriu de dezangajare silențioasă."
+            "{names} prezintă izolare în rețeaua de relații combinată cu un scor scăzut de siguranță "
+            "psihologică. Aceștia nu solicită ajutor și contribuie limitat — un posibil semnal timpuriu "
+            "de dezangajare. De luat în calcul și alți factori (vechime, stil de lucru, personalitate)."
         ),
-        "pattern_silent_stars": "Performeri tăcuți — potențial neexploatat",
+        "pattern_silent_stars": "Performeri cu potențial neexploatat",
         "pattern_silent_stars_desc": (
-            "{names} au indicatori buni dar scor Polite Mask scăzut. "
-            "O conversație directă despre ce îi oprește poate debloca contribuții valoroase."
+            "{names} prezintă indicatori de stres și risc în parametri buni, dar un scor scăzut "
+            "de siguranță psihologică. Contribuția lor poate fi mai mare dacă mediul devine "
+            "mai permisiv cu greșelile și propunerile."
         ),
-        "pattern_ok": "Nucleu stabil",
+        "pattern_ok": "Nucleu cu indicatori stabili",
         "pattern_ok_desc": (
-            "{names} prezintă toți indicatorii în parametri normali. "
-            "Reprezintă fundația stabilă a echipei."
+            "{names} prezintă toți indicatorii în parametri normali în această analiză."
         ),
         "burnout_critical": (
-            "{name} se află în burnout avansat (scor {b:.0f}/100). "
-            "Lucrează {ore}h/săptămână, {concediu} zi(e) concediu, energie {energie}/5. "
-            "Fără intervenție în 1–2 săptămâni, riscul de colaps sau demisie este ridicat."
+            "{name} prezintă indicatori de stres ridicat ({b:.0f}/100). "
+            "Lucrează {ore}h/săptămână, {concediu} zi(e) concediu efectuate, energie {energie}/5. "
+            "Merită o conversație 1:1 în perioada imediat următoare."
         ),
         "burnout_warning": (
-            "{name} prezintă semne timpurii de burnout (scor {b:.0f}/100). "
-            "Energie {energie}/5, {ore}h/săpt. — oboseală acumulată, necesită monitorizare."
+            "{name} prezintă semne de acumulare a oboselii ({b:.0f}/100). "
+            "Energie {energie}/5, {ore}h/săpt. — de urmărit în următoarele săptămâni."
         ),
-        "burnout_ok": "{name} funcționează în parametri normali din perspectiva energiei și efortului.",
+        "burnout_ok": "{name} prezintă indicatori de energie și efort în parametri normali.",
         "leaving_critical": (
-            "{name} are risc de plecare ridicat (scor {f:.0f}/100). "
-            "Ultima mărire: acum {marire} luni | Energie: {energie}/5 | "
-            "Consultat de {conn} colegi. Cost estimat înlocuire: {cost}."
+            "{name} prezintă factori de risc de plecare ridicați ({f:.0f}/100). "
+            "Ultima ajustare salarială: acum {marire} luni | Energie: {energie}/5 | "
+            "Consultat de {conn} colegi.{cost_str}"
         ),
         "leaving_monitor": (
-            "{name} prezintă factori de risc moderați (scor {f:.0f}/100). "
-            "Stagnare financiară ({marire} luni) — conversație de carieră în 30 de zile."
+            "{name} prezintă factori de risc moderați ({f:.0f}/100). "
+            "Stagnare financiară ({marire} luni) — o conversație de carieră în 30 de zile ar fi utilă."
         ),
-        "leaving_ok": "{name} este stabil din perspectiva riscului de plecare.",
+        "leaving_ok": "{name} prezintă indicatori de stabilitate în această analiză.",
         "mask_critical": (
-            "{name} tace activ (Polite Mask {mask:.1f}/5). "
-            "Nu raportează erori și nu propune idei — se simte nesigur(ă). "
-            "Prioritar: conversație de siguranță psihologică, nu de performanță."
+            "{name} are un scor scăzut de siguranță psihologică ({mask:.1f}/5). "
+            "Contribuie limitat cu idei și recunoașterea greșelilor. "
+            "O conversație 1:1 axată pe siguranță, nu pe performanță, poate fi utilă."
         ),
         "mask_silent": (
-            "{name} are potențial neexploatat (Polite Mask {mask:.1f}/5). "
-            "Contribuție mai mare posibilă dacă mediul devine mai permisiv cu erorile."
+            "{name} are potențial de contribuție mai mare ({mask:.1f}/5). "
+            "Un mediu mai permisiv cu greșelile poate debloca această contribuție."
         ),
-        "mask_ok": "{name} contribuie autentic și se simte în siguranță să greșească și să propună.",
-        "action_burnout_critical": (
-            "Programează 1:1 cu {name} în 48h. Nu evaluare — ascultare. "
-            "Întreabă ce ar face situația mai sustenabilă."
-        ),
-        "action_leaving_critical": (
-            "Inițiază conversație de carieră cu {name}. "
-            "Verifică dacă există spațiu pentru ajustare salarială sau de rol."
-        ),
-        "action_mask_critical": (
-            "Cu {name}: înlocuiește feedback-ul de grup cu 1:1. "
-            "Creează un moment explicit în care eroarea este normalizată public."
-        ),
-        "action_hub": (
-            "Distribuie din responsabilitățile informale ale lui {name}. "
-            "Identifică cine poate prelua 20% din cererile de sfat."
-        ),
-        "action_isolated": (
-            "Include {name} explicit în cel puțin o decizie de echipă săptămâna aceasta."
-        ),
-        "replacement_cost": "~{min}–{max} (6–12 luni salariu + recrutare)",
+        "mask_ok": "{name} contribuie activ și pare să se simtă în siguranță să greșească și să propună.",
+        "action_burnout_critical": "Planifică o discuție 1:1 cu {name} — axată pe ascultare, nu evaluare.",
+        "action_leaving_critical": "Inițiază o conversație de carieră cu {name} despre perspective și satisfacție.",
+        "action_mask_critical": "Cu {name}: creează un context privat unde greșeala este tratată ca informație, nu eșec.",
+        "action_hub": "Distribuie treptat din responsabilitățile informale ale lui {name} către alți colegi.",
+        "action_isolated": "Include {name} explicit în cel puțin o decizie de echipă în perioada imediat următoare.",
+        "cost_str_template": " Cost estimat înlocuire: {cost}.",
+        "replacement_cost": "~{min}–{max} (6–12 luni)",
     },
     "English": {
-        "exec_title":   "Executive summary",
-        "exec_all_ok":  "The team is operating within normal parameters. No critical risks identified.",
-        "exec_some_risk": "{n_risk} situation(s) require attention in the next 30 days.",
-        "exec_critical": "{n_critical} employee(s) in the critical zone — immediate action required.",
-        "sec_urgent":   "Urgent — immediate action required",
-        "sec_monitor":  "Active monitoring — 30 days",
-        "sec_patterns": "Team-level patterns",
-        "sec_ok":       "What's working well",
-        "action_title": "What you do concretely — this week",
-        "pattern_cultural_silence": "Cultural psychological safety issue",
+        "exec_title":    "Executive summary",
+        "key_insights":  "Key insights",
+        "exec_all_ok":   "The team is operating within normal parameters. No significant risks identified in this analysis cycle.",
+        "exec_critical": "{n_critical} employee(s) show indicators that suggest immediate attention.",
+        "exec_some_risk":"{n_risk} situation(s) were identified that warrant attention in the coming period.",
+        "sec_urgent":    "Situations suggesting immediate attention",
+        "sec_monitor":   "To follow up within 30 days",
+        "sec_patterns":  "Team-level patterns",
+        "sec_ok":        "What appears to be working well",
+        "action_title":  "What you can do concretely — suggestions for the immediate period ahead",
+        "action_w1":     "🔴 Priority — this week",
+        "action_w2":     "🟡 Important — within 30 days",
+        "action_w3":     "🟢 To monitor",
+        "pattern_cultural_silence": "Possible micro-culture issue — psychological safety",
         "pattern_cultural_silence_desc": (
-            "{pct}% of the team scores below 3 on the Polite Mask indicator. "
-            "This signals a systemic cultural issue, not an individual one. "
-            "People are silent because it doesn't feel safe to make mistakes or propose ideas. "
-            "The intervention must happen at team level, not person by person."
+            "{pct}% of the team scores below 3 on the Polite Mask indicator. This may indicate a systemic "
+            "micro-culture issue, not an individual one. People are staying silent because they don't feel "
+            "safe to make mistakes or propose ideas. The intervention needed is at team level, not per person. "
+            "Other factors not included here should also be considered (e.g. tenure)."
         ),
         "pattern_hub_risk": "Overloaded central hub — systemic risk",
         "pattern_hub_risk_desc": (
-            "{name} is consulted by {n_conn} colleagues and simultaneously shows high burnout ({b:.0f}) "
-            "and high leaving risk ({f:.0f}). "
-            "If this person leaves, the team's informal knowledge flow breaks down abruptly. "
-            "This is the most costly risk scenario in this audit."
+            "{name} is consulted by {n_conn} colleagues and simultaneously shows elevated "
+            "stress & burnout indicators ({b:.0f}/100) and leaving risk ({f:.0f}/100). "
+            "If this person leaves or burns out, the team's informal knowledge flow may break down abruptly. "
+            "This is the most costly risk scenario in this analysis."
         ),
-        "pattern_isolation": "Total disconnection — dual isolation",
+        "pattern_isolation": "Dual disconnection — isolation and silence",
         "pattern_isolation_desc": (
-            "{names} show network isolation combined with a polite mask. "
-            "They don't ask for help and don't contribute — early signal of silent disengagement."
+            "{names} show network isolation combined with a low psychological safety score. "
+            "They don't seek help and contribute minimally — a possible early signal of disengagement. "
+            "Other factors should also be considered (tenure, work style, personality)."
         ),
-        "pattern_silent_stars": "Silent performers — untapped potential",
+        "pattern_silent_stars": "Performers with untapped potential",
         "pattern_silent_stars_desc": (
-            "{names} perform well but score low on Polite Mask. "
-            "A direct conversation about what holds them back may unlock valuable contributions."
+            "{names} show good stress and risk indicators but a low psychological safety score. "
+            "Their contribution could be greater if the environment becomes more permissive "
+            "with mistakes and proposals."
         ),
-        "pattern_ok": "Stable core",
+        "pattern_ok": "Core with stable indicators",
         "pattern_ok_desc": (
-            "{names} show all indicators within normal parameters. "
-            "They represent the stable foundation of the team."
+            "{names} show all indicators within normal parameters in this analysis."
         ),
         "burnout_critical": (
-            "{name} is in advanced burnout (score {b:.0f}/100). "
-            "Working {ore}h/week, {concediu} vacation day(s), energy {energie}/5. "
-            "Without intervention in 1–2 weeks, collapse or sudden resignation risk is high."
+            "{name} shows elevated stress indicators ({b:.0f}/100). "
+            "Working {ore}h/week, {concediu} vacation day(s) taken, energy {energie}/5. "
+            "A 1:1 conversation in the near term is worth considering."
         ),
         "burnout_warning": (
-            "{name} shows early burnout signs (score {b:.0f}/100). "
-            "Energy {energie}/5, {ore}h/week — accumulating fatigue, needs monitoring."
+            "{name} shows signs of accumulating fatigue ({b:.0f}/100). "
+            "Energy {energie}/5, {ore}h/week — worth monitoring over the next few weeks."
         ),
-        "burnout_ok": "{name} is operating within normal parameters for energy and effort.",
+        "burnout_ok": "{name} shows energy and effort indicators within normal parameters.",
         "leaving_critical": (
-            "{name} has high leaving risk (score {f:.0f}/100). "
-            "Last raise: {marire} months ago | Energy: {energie}/5 | "
-            "Consulted by {conn} colleagues. Estimated replacement cost: {cost}."
+            "{name} shows elevated leaving risk factors ({f:.0f}/100). "
+            "Last salary adjustment: {marire} months ago | Energy: {energie}/5 | "
+            "Consulted by {conn} colleagues.{cost_str}"
         ),
         "leaving_monitor": (
-            "{name} shows moderate risk factors (score {f:.0f}/100). "
-            "Financial stagnation ({marire} months) — career conversation within 30 days."
+            "{name} shows moderate risk factors ({f:.0f}/100). "
+            "Financial stagnation ({marire} months) — a career conversation within 30 days would be useful."
         ),
-        "leaving_ok": "{name} is stable from a leaving risk perspective.",
+        "leaving_ok": "{name} shows stability indicators in this analysis.",
         "mask_critical": (
-            "{name} is actively silent (Polite Mask {mask:.1f}/5). "
-            "Doesn't report errors or propose ideas — feels unsafe. "
-            "Priority: psychological safety conversation, not performance review."
+            "{name} has a low psychological safety score ({mask:.1f}/5). "
+            "Contributes minimally with ideas and error acknowledgment. "
+            "A 1:1 conversation focused on safety, not performance, may be helpful."
         ),
         "mask_silent": (
-            "{name} has untapped potential (Polite Mask {mask:.1f}/5). "
-            "Greater contribution possible if the environment becomes more permissive with mistakes."
+            "{name} has potential for greater contribution ({mask:.1f}/5). "
+            "A more permissive environment around mistakes may unlock this."
         ),
-        "mask_ok": "{name} contributes authentically and feels safe to make mistakes and propose ideas.",
-        "action_burnout_critical": (
-            "Schedule a 1:1 with {name} within 48h. Not an evaluation — listening. "
-            "Ask what would make the situation more sustainable."
-        ),
-        "action_leaving_critical": (
-            "Initiate a career conversation with {name}. "
-            "Check if there's room for a salary or role adjustment."
-        ),
-        "action_mask_critical": (
-            "With {name}: replace group feedback with 1:1 conversations. "
-            "Create an explicit moment where making mistakes is publicly normalized."
-        ),
-        "action_hub": (
-            "Distribute some of {name}'s informal responsibilities. "
-            "Identify who could take over 20% of the advice requests."
-        ),
-        "action_isolated": (
-            "Include {name} explicitly in at least one team decision this week."
-        ),
-        "replacement_cost": "~{min}–{max} (6–12 months salary + recruitment)",
+        "mask_ok": "{name} contributes actively and appears to feel safe to make mistakes and propose ideas.",
+        "action_burnout_critical": "Schedule a 1:1 with {name} — focused on listening, not evaluation.",
+        "action_leaving_critical": "Initiate a career conversation with {name} about prospects and satisfaction.",
+        "action_mask_critical": "With {name}: create a private context where mistakes are treated as information, not failure.",
+        "action_hub": "Gradually distribute some of {name}'s informal responsibilities to other colleagues.",
+        "action_isolated": "Explicitly include {name} in at least one team decision in the near term.",
+        "cost_str_template": " Estimated replacement cost: {cost}.",
+        "replacement_cost": "~{min}–{max} (6–12 months)",
     }
 }
 
 
 def fmt_cost(salary_monthly, t):
-    return t["replacement_cost"].format(
+    if salary_monthly <= 0:
+        return ""
+    cost_str = t["replacement_cost"].format(
         min=f"€{salary_monthly * 6:,.0f}",
         max=f"€{salary_monthly * 12:,.0f}"
     )
+    return t["cost_str_template"].format(cost=cost_str)
 
 
 def insight_card(text, level="info"):
     colors = {
-        "critical": ("#FDEDEC", "#C0392B", "⚠", "#7B241C"),
+        "critical": ("#FDEDEC", "#C0392B", "▲", "#7B241C"),
         "warning":  ("#FEF9E7", "#E67E22", "◉", "#784212"),
         "ok":       ("#EAFAF1", "#1E8449", "✓", "#1D6A39"),
         "info":     ("#EBF5FB", "#2471A3", "→", "#1A5276"),
     }
-    bg, border, icon, text_color = colors.get(level, colors["info"])
+    bg, border, icon, tc = colors.get(level, colors["info"])
     st.markdown(
         f"<div style='background:{bg};border-left:3px solid {border};"
         f"border-radius:0 8px 8px 0;padding:12px 16px;margin:6px 0;"
-        f"font-size:14px;line-height:1.6;color:{text_color}'>"
+        f"font-size:14px;line-height:1.6;color:{tc}'>"
         f"<span style='color:{border};margin-right:8px'>{icon}</span>{text}</div>",
         unsafe_allow_html=True
     )
 
 
-def action_card(text):
+def action_card(text, level="w2"):
+    bg = {"w1": "#FEF5F5", "w2": "#FEFDF0", "w3": "#F0FEF5"}.get(level, "#F4F6F7")
     st.markdown(
-        f"<div style='background:#F4F6F7;border:1px solid #D5D8DC;"
-        f"border-radius:8px;padding:12px 16px;margin:4px 0;"
+        f"<div style='background:{bg};border:1px solid #D5D8DC;"
+        f"border-radius:8px;padding:10px 16px;margin:4px 0;"
         f"font-size:13px;line-height:1.6;color:#2C3E50'>"
         f"<span style='color:#E67E22;margin-right:8px;font-weight:600'>→</span>{text}</div>",
         unsafe_allow_html=True
@@ -408,8 +460,8 @@ def action_card(text):
 def section_header(title, color="#1C2833"):
     st.markdown(
         f"<div style='margin:24px 0 10px;padding:8px 14px;"
-        f"background:{color}10;border-left:3px solid {color};"
-        f"border-radius:0 6px 6px 0;font-weight:600;font-size:15px'>"
+        f"background:{color}18;border-left:3px solid {color};"
+        f"border-radius:0 6px 6px 0;font-weight:600;font-size:15px;color:{color}'>"
         f"{title}</div>",
         unsafe_allow_html=True
     )
@@ -425,36 +477,42 @@ def generate_individual_insights(row, t, salary):
     concediu = int(row.get('Zile_Concediu', 0))
     marire   = int(row.get('Ultima_Marire', 24))
     conn     = int(row.get('ONA_InDegree', 0))
-    cost     = fmt_cost(salary, t) if salary > 0 else "N/A"
-    actions  = []
+    cost_str = fmt_cost(salary, t)
+
+    actions_w1, actions_w2, actions_w3 = [], [], []
 
     if b > 70:
         bt, bl = t["burnout_critical"].format(name=name, b=b, ore=ore, concediu=concediu, energie=energie), "critical"
-        actions.append(t["action_burnout_critical"].format(name=name))
+        actions_w1.append(t["action_burnout_critical"].format(name=name))
     elif b > 50:
         bt, bl = t["burnout_warning"].format(name=name, b=b, ore=ore, energie=energie), "warning"
+        actions_w2.append(t["action_burnout_critical"].format(name=name))
     else:
         bt, bl = t["burnout_ok"].format(name=name), "ok"
 
     if f > 65:
-        ft, fl = t["leaving_critical"].format(name=name, f=f, marire=marire, energie=energie, conn=conn, cost=cost), "critical"
-        actions.append(t["action_leaving_critical"].format(name=name))
+        ft, fl = t["leaving_critical"].format(name=name, f=f, marire=marire, energie=energie, conn=conn, cost_str=cost_str), "critical"
+        actions_w1.append(t["action_leaving_critical"].format(name=name))
     elif f > 40:
         ft, fl = t["leaving_monitor"].format(name=name, f=f, marire=marire), "warning"
+        actions_w2.append(t["action_leaving_critical"].format(name=name))
     else:
         ft, fl = t["leaving_ok"].format(name=name), "ok"
 
     if mask < 3:
         mt, ml = t["mask_critical"].format(name=name, mask=mask), "critical"
-        actions.append(t["action_mask_critical"].format(name=name))
+        actions_w2.append(t["action_mask_critical"].format(name=name))
     elif mask <= 4:
         mt, ml = t["mask_silent"].format(name=name, mask=mask), "warning"
+        actions_w3.append(t["action_mask_critical"].format(name=name))
     else:
         mt, ml = t["mask_ok"].format(name=name), "ok"
 
     return {
         "burnout": (bt, bl), "leaving": (ft, fl), "mask": (mt, ml),
-        "actions": actions,
+        "actions_w1": actions_w1,
+        "actions_w2": actions_w2,
+        "actions_w3": actions_w3,
         "is_critical": b > 70 or f > 65,
         "is_warning":  (50 < b <= 70) or (40 < f <= 65),
     }
@@ -514,14 +572,42 @@ def render_insights_tab(df, G, lang, salary=3000):
 
     n_critical = int(((df['B_Score'] > 70) | (df['F_Score'] > 65)).sum())
     n_warning  = int(((df['B_Score'].between(50, 70)) | (df['F_Score'].between(40, 65))).sum())
+    n_ok       = len(df) - n_critical - n_warning
     n_risk     = n_critical + n_warning
 
+    # ── EXECUTIVE SUMMARY — metric cards ────────────────────
     section_header(f"🔬 {t['exec_title']}", "#2E4057")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("🔴 Critice" if lang == "Română" else "🔴 Critical", n_critical)
-    c2.metric("🟡 Monitorizare" if lang == "Română" else "🟡 Monitoring", n_warning)
-    c3.metric("🟢 OK", len(df) - n_risk)
 
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div style='background:#FDEDEC;border-radius:12px;padding:20px;text-align:center;border:1px solid #E74C3C22'>
+            <div style='font-size:42px;font-weight:700;color:#C0392B'>{n_critical}</div>
+            <div style='font-size:13px;color:#7B241C;margin-top:4px'>
+                {'🔴 Intervenție imediată' if lang=='Română' else '🔴 Immediate attention'}
+            </div>
+        </div>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div style='background:#FEF9E7;border-radius:12px;padding:20px;text-align:center;border:1px solid #E67E2222'>
+            <div style='font-size:42px;font-weight:700;color:#E67E22'>{n_warning}</div>
+            <div style='font-size:13px;color:#784212;margin-top:4px'>
+                {'🟡 De urmărit' if lang=='Română' else '🟡 To monitor'}
+            </div>
+        </div>""", unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div style='background:#EAFAF1;border-radius:12px;padding:20px;text-align:center;border:1px solid #27AE6022'>
+            <div style='font-size:42px;font-weight:700;color:#1E8449'>{n_ok}</div>
+            <div style='font-size:13px;color:#1D6A39;margin-top:4px'>
+                {'🟢 În parametri' if lang=='Română' else '🟢 Within range'}
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
+
+    # ── KEY INSIGHTS ─────────────────────────────────────────
+    section_header(f"💡 {t['key_insights']}", "#2E4057")
     if n_critical > 0:
         insight_card(t["exec_critical"].format(n_critical=n_critical), "critical")
     if n_warning > 0:
@@ -529,6 +615,21 @@ def render_insights_tab(df, G, lang, salary=3000):
     if n_critical == 0 and n_warning == 0:
         insight_card(t["exec_all_ok"], "ok")
 
+    # Hub alert in key insights
+    hubs = df[(df['ONA_InDegree'] >= 3) & (df['B_Score'] > 60) & (df['F_Score'] > 50)]
+    for _, row in hubs.iterrows():
+        if lang == "Română":
+            insight_card(
+                f"<b>{row['Nume']}</b> este nodul central al echipei și prezintă simultan "
+                f"stres ridicat ({row['B_Score']:.0f}) și risc de plecare ridicat ({row['F_Score']:.0f}). "
+                f"Acesta este scenariul prioritar din această analiză.", "critical")
+        else:
+            insight_card(
+                f"<b>{row['Nume']}</b> is the team's central hub and simultaneously shows "
+                f"elevated stress ({row['B_Score']:.0f}) and leaving risk ({row['F_Score']:.0f}). "
+                f"This is the priority scenario in this analysis.", "critical")
+
+    # ── TEAM PATTERNS ────────────────────────────────────────
     patterns = detect_team_patterns(df, G, t)
     if patterns:
         section_header(f"🕸️ {t['sec_patterns']}", "#8E44AD")
@@ -536,6 +637,7 @@ def render_insights_tab(df, G, lang, salary=3000):
             with st.expander(p["title"], expanded=(p["level"] == "critical")):
                 insight_card(p["text"], p["level"])
 
+    # ── URGENT INDIVIDUAL ────────────────────────────────────
     urgent = df[(df['B_Score'] > 70) | (df['F_Score'] > 65)].copy()
     urgent['_max'] = urgent[['B_Score', 'F_Score']].max(axis=1)
     urgent = urgent.sort_values('_max', ascending=False)
@@ -545,13 +647,16 @@ def render_insights_tab(df, G, lang, salary=3000):
         for _, row in urgent.iterrows():
             ins = generate_individual_insights(row, t, salary)
             with st.expander(
-                f"{row['Nume']} — B: {row['B_Score']:.0f} | F: {row['F_Score']:.0f} | M: {row['S_Raw']:.1f}",
+                f"{row['Nume']} — Burnout: {row['B_Score']:.0f} | "
+                f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f} | "
+                f"Mask: {row['S_Raw']:.1f}",
                 expanded=True
             ):
                 insight_card(f"🔥 {ins['burnout'][0]}", ins['burnout'][1])
                 insight_card(f"✈️ {ins['leaving'][0]}", ins['leaving'][1])
                 insight_card(f"🤐 {ins['mask'][0]}", ins['mask'][1])
 
+    # ── MONITOR ──────────────────────────────────────────────
     monitor = df[
         ~((df['B_Score'] > 70) | (df['F_Score'] > 65)) &
         ((df['B_Score'] > 50) | (df['F_Score'] > 40))
@@ -564,29 +669,46 @@ def render_insights_tab(df, G, lang, salary=3000):
         for _, row in monitor.iterrows():
             ins = generate_individual_insights(row, t, salary)
             with st.expander(
-                f"{row['Nume']} — B: {row['B_Score']:.0f} | F: {row['F_Score']:.0f} | M: {row['S_Raw']:.1f}",
+                f"{row['Nume']} — Burnout: {row['B_Score']:.0f} | "
+                f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f} | "
+                f"Mask: {row['S_Raw']:.1f}",
                 expanded=False
             ):
                 insight_card(f"🔥 {ins['burnout'][0]}", ins['burnout'][1])
                 insight_card(f"✈️ {ins['leaving'][0]}", ins['leaving'][1])
                 insight_card(f"🤐 {ins['mask'][0]}", ins['mask'][1])
 
-    all_actions = []
+    # ── ACTIONS — 3 urgency levels, max 3 each ───────────────
+    all_w1, all_w2, all_w3 = [], [], []
     for _, row in df.iterrows():
-        all_actions.extend(generate_individual_insights(row, t, salary)["actions"])
+        ins = generate_individual_insights(row, t, salary)
+        all_w1.extend(ins["actions_w1"])
+        all_w2.extend(ins["actions_w2"])
+        all_w3.extend(ins["actions_w3"])
 
-    hubs = df[df['ONA_InDegree'] >= 3].sort_values('ONA_InDegree', ascending=False)
-    if not hubs.empty:
-        all_actions.append(t["action_hub"].format(name=hubs.iloc[0]['Nume']))
+    hubs_df = df[df['ONA_InDegree'] >= 3].sort_values('ONA_InDegree', ascending=False)
+    if not hubs_df.empty:
+        all_w1.append(t["action_hub"].format(name=hubs_df.iloc[0]['Nume']))
 
     for _, row in df[(df['ONA_Conn'] <= 1) & (df['S_Raw'] < 3)].iterrows():
-        all_actions.append(t["action_isolated"].format(name=row['Nume']))
+        all_w3.append(t["action_isolated"].format(name=row['Nume']))
 
-    if all_actions:
+    if any([all_w1, all_w2, all_w3]):
         section_header(f"✅ {t['action_title']}", "#1E8449")
-        for action in all_actions:
-            action_card(action)
+        if all_w1:
+            st.markdown(f"**{t['action_w1']}**")
+            for a in all_w1[:3]:
+                action_card(a, "w1")
+        if all_w2:
+            st.markdown(f"**{t['action_w2']}**")
+            for a in all_w2[:3]:
+                action_card(a, "w2")
+        if all_w3:
+            st.markdown(f"**{t['action_w3']}**")
+            for a in all_w3[:3]:
+                action_card(a, "w3")
 
+    # ── STABLE CORE ──────────────────────────────────────────
     stable = df[(df['B_Score'] < 40) & (df['F_Score'] < 35) & (df['S_Raw'] >= 3.5)]
     if not stable.empty:
         section_header(f"💚 {t['sec_ok']}", "#1E8449")
@@ -597,32 +719,52 @@ def render_insights_tab(df, G, lang, salary=3000):
 # APP PRINCIPAL
 # ════════════════════════════════════════════════════════════
 
-l = UI[st.session_state.lang]
+l = UI[lang]
 st.title(l["title"])
 uploaded_file = st.file_uploader(l["upload"], type=["xlsx"])
 
 if uploaded_file:
     try:
-        df = pd.read_excel(uploaded_file)
+        df_raw = pd.read_excel(uploaded_file)
 
-        # Detectare automată header (rândul 3 dacă există titlu și subtitlu)
-        if df.columns[0] not in REQUIRED_COLUMNS and len(df) > 2:
-            df = pd.read_excel(uploaded_file, header=2)
-        df.columns = df.columns.str.strip()
+        # Auto-detect header row
+        if df_raw.columns[0] not in REQUIRED_COLUMNS and len(df_raw) > 2:
+            df_raw = pd.read_excel(uploaded_file, header=2)
+        df_raw.columns = df_raw.columns.str.strip()
 
-        missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
+        # Validate columns
+        missing = [c for c in REQUIRED_COLUMNS if c not in df_raw.columns]
         if missing:
             st.error(f"{l['err_col']} {', '.join(missing)}")
             st.stop()
 
-        df, G = compute_indicators(df)
+        df, G = compute_indicators(df_raw)
 
+        if len(df) == 0:
+            st.error("Nu au fost găsiți angajați valizi în fișier. Verifică că datele sunt completate corect." if lang == "Română"
+                     else "No valid employees found in the file. Please check that data is correctly filled in.")
+            st.stop()
+
+        # Data quality warnings
+        if (df['Ore_Saptamana'] > 80).any():
+            st.warning(l["warn_hours"])
+        if (df['Zile_Concediu'] > 30).any():
+            st.warning(l["warn_vacation"])
+        sfat_empty = df['Sfat_De_La'].astype(str).str.lower().isin(['nan', 'none', ''])
+        if sfat_empty.sum() > len(df) * 0.5:
+            st.warning(l["warn_ona"])
+
+        # ── TABS ─────────────────────────────────────────────
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
-            l["b_title"], l["s_title"], l["f_title"], l["o_title"], l["i_title"]
+            l["tab1"], l["tab2"], l["tab3"], l["tab4"], l["tab5"]
         ])
 
-        # ── TAB 1: BURNOUT ──────────────────────────────────
+        # ── TAB 1: INSIGHTS ──────────────────────────────────
         with tab1:
+            render_insights_tab(df, G, lang, salary)
+
+        # ── TAB 2: STRES & BURNOUT ───────────────────────────
+        with tab2:
             st.caption(l["b_desc"])
             st.caption(l["b_legend"])
             df_b = df.sort_values('B_Score', ascending=True)
@@ -640,71 +782,136 @@ if uploaded_file:
             fig_b.update_layout(
                 xaxis=dict(range=[0, 115], title="Burnout Score"),
                 yaxis=dict(title=""),
-                height=max(400, len(df) * 26),
-                margin=dict(l=10, r=40, t=20, b=20)
+                height=max(420, len(df) * 26),
+                margin=dict(l=10, r=50, t=20, b=20),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig_b, use_container_width=True)
 
-        # ── TAB 2: POLITE MASK ──────────────────────────────
-        with tab2:
+        # ── TAB 3: MASCA POLITICOASĂ ─────────────────────────
+        with tab3:
+            st.markdown(l["s_title_chart"])
             st.caption(l["s_desc"])
+            st.markdown("---")
+
             fig_s = px.scatter(
-                df, x="Scor_Siguranta" if "Scor_Siguranta" in df.columns else "S_Raw",
-                y="S_Contr",
+                df, x="Erori_Asumate", y="Idei_Noi",
                 size="S_Size",
                 color="S_Score",
                 color_continuous_scale='Oranges',
                 hover_name="Nume",
-                hover_data={"S_Raw": ":.2f", "B_Score": ":.1f"}
+                hover_data={
+                    "Erori_Asumate": ":.1f",
+                    "Idei_Noi": ":.1f",
+                    "S_Score": ":.0f",
+                    "S_Size": False
+                },
+                labels={
+                    "Erori_Asumate": "Asumare erori (1–5)" if lang == "Română" else "Error acknowledgment (1–5)",
+                    "Idei_Noi": "Propunere idei (1–5)" if lang == "Română" else "Idea proposals (1–5)",
+                    "S_Score": "Risc mască (%)" if lang == "Română" else "Mask risk (%)"
+                }
             )
-            x_mid = 3.5 if "Scor_Siguranta" in df.columns else 3.0
-            fig_s.add_vline(x=x_mid, line_dash="dot", line_color="gray",
-                            annotation_text=l["s_q2"] + " | " + l["s_q1"],
-                            annotation_position="top")
-            fig_s.add_hline(y=3.0, line_dash="dot", line_color="gray",
-                            annotation_text=l["s_q4"] + " | " + l["s_q3"],
-                            annotation_position="right")
-            fig_s.update_layout(height=500, margin=dict(l=10, r=10, t=40, b=20))
+            # Custom hover template with human-readable labels
+            erori_lbl = "Asumare erori" if lang == "Română" else "Error acknowledgment"
+            idei_lbl  = "Propunere idei" if lang == "Română" else "Idea proposals"
+            risk_lbl  = "Risc mască" if lang == "Română" else "Mask risk"
+            fig_s.update_traces(
+                hovertemplate=(
+                    f"<b>%{{hovertext}}</b><br>"
+                    f"{erori_lbl}: %{{x:.1f}}/5<br>"
+                    f"{idei_lbl}: %{{y:.1f}}/5<br>"
+                    f"{risk_lbl}: %{{marker.color:.0f}}%"
+                    "<extra></extra>"
+                )
+            )
+            fig_s.add_vline(x=3.0, line_dash="dot", line_color="rgba(150,150,150,0.6)")
+            fig_s.add_hline(y=3.0, line_dash="dot", line_color="rgba(150,150,150,0.6)")
+
+            # Quadrant labels
+            fig_s.add_annotation(x=1.5, y=4.5, text=l["s_q_tl"],
+                                  showarrow=False, font=dict(size=11, color="rgba(150,150,150,0.8)"))
+            fig_s.add_annotation(x=4.2, y=4.5, text=l["s_q_tr"],
+                                  showarrow=False, font=dict(size=11, color="rgba(100,180,100,0.9)"))
+            fig_s.add_annotation(x=1.5, y=1.2, text=l["s_q_bl"],
+                                  showarrow=False, font=dict(size=11, color="rgba(200,80,80,0.9)"))
+            fig_s.add_annotation(x=4.2, y=1.2, text=l["s_q_br"],
+                                  showarrow=False, font=dict(size=11, color="rgba(200,150,50,0.9)"))
+
+            fig_s.update_layout(
+                height=500,
+                margin=dict(l=10, r=10, t=20, b=20),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)'
+            )
             st.plotly_chart(fig_s, use_container_width=True)
 
-        # ── TAB 3: LEAVING RISK ─────────────────────────────
-        with tab3:
+        # ── TAB 4: RISC PLECARE ──────────────────────────────
+        with tab4:
             st.caption(l["f_desc"])
             st.info(l["f_cost"])
-            df_f = df.sort_values('F_Score', ascending=True)
-            fig_f = px.bar(
-                df_f, x="F_Score", y="Nume", orientation='h',
-                color="F_Score",
-                color_continuous_scale=[
-                    [0, "#27AE60"], [0.4, "#F39C12"], [0.65, "#E74C3C"], [1, "#922B21"]
-                ],
+
+            df_f = df.sort_values('F_Score', ascending=True).copy()
+
+            # Cost per employee if salary set
+            if salary > 0:
+                df_f['Cost_Est'] = df_f['F_Score'].apply(
+                    lambda s: f"€{salary*6:,.0f}–€{salary*12:,.0f}" if s > 65 else ""
+                )
+
+            colors_f = [
+                '#E74C3C' if s > 65 else '#F39C12' if s > 40 else '#27AE60'
+                for s in df_f['F_Score']
+            ]
+            fig_f = go.Figure(go.Bar(
+                x=df_f['F_Score'], y=df_f['Nume'],
+                orientation='h',
+                marker_color=colors_f,
                 text=df_f['F_Score'].round(1),
-            )
-            fig_f.update_traces(textposition='outside')
+                textposition='outside'
+            ))
             fig_f.update_layout(
                 xaxis=dict(range=[0, 115], title="Leaving Risk Score"),
                 yaxis=dict(title=""),
-                height=max(400, len(df) * 26),
-                margin=dict(l=10, r=40, t=20, b=20),
-                coloraxis_showscale=False
+                height=max(420, len(df) * 26),
+                margin=dict(l=10, r=50, t=20, b=20),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig_f, use_container_width=True)
 
-        # ── TAB 4: ONA ──────────────────────────────────────
-        with tab4:
+            # Cost table for high-risk employees
+            if salary > 0:
+                high_risk = df_f[df_f['F_Score'] > 65][['Nume', 'F_Score', 'Cost_Est']].sort_values('F_Score', ascending=False)
+                if not high_risk.empty:
+                    st.markdown(
+                        f"**{'Cost estimat înlocuire — angajați cu risc ridicat' if lang=='Română' else 'Estimated replacement cost — high-risk employees'}**"
+                    )
+                    high_risk.columns = [
+                        'Cod angajat' if lang=='Română' else 'Employee code',
+                        'Scor risc' if lang=='Română' else 'Risk score',
+                        'Cost estimat' if lang=='Română' else 'Estimated cost'
+                    ]
+                    st.dataframe(high_risk, hide_index=True, use_container_width=True)
+
+        # ── TAB 5: REȚEAUA DE RELAȚII ────────────────────────
+        with tab5:
             st.caption(l["o_desc"])
-            st.caption(l["o_legend"])
+            st.caption(l["o_arrow"])
+
             pos = nx.spring_layout(G, k=1.2, seed=42)
             fig_ona = go.Figure()
 
             for e in G.edges():
                 x0, y0 = pos[e[0]]; x1, y1 = pos[e[1]]
                 fig_ona.add_trace(go.Scatter(
-                    x=[x0, (x0+x1)/2, x1], y=[y0, (y0+y1)/2, y1],
+                    x=[x0, (x0+x1)/2, x1],
+                    y=[y0, (y0+y1)/2, y1],
                     mode='lines+markers',
                     marker=dict(symbol="arrow", size=8, angleref="previous",
-                                color="rgba(150,150,150,0.6)"),
-                    line=dict(width=1, color='rgba(150,150,150,0.4)'),
+                                color="rgba(150,150,150,0.5)"),
+                    line=dict(width=1, color='rgba(150,150,150,0.35)'),
                     hoverinfo='none', showlegend=False
                 ))
 
@@ -721,28 +928,29 @@ if uploaded_file:
                 marker=dict(
                     size=sizes,
                     color=b_vals,
-                    colorscale='Reds',
+                    colorscale='RdYlGn_r',
                     showscale=True,
-                    colorbar=dict(title="Burnout"),
-                    line=dict(width=1, color='white')
+                    colorbar=dict(
+                        title="Burnout" if lang=="English" else "Burnout",
+                        tickvals=[0, 50, 100],
+                        ticktext=["0", "50", "100"]
+                    ),
+                    line=dict(width=1, color='rgba(255,255,255,0.3)')
                 ),
                 hovertemplate="<b>%{text}</b><br>Burnout: %{marker.color:.0f}<extra></extra>",
                 showlegend=False
             ))
 
             fig_ona.update_layout(
-                showlegend=False,
-                height=600,
+                showlegend=False, height=600,
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                margin=dict(l=20, r=20, t=20, b=20)
+                margin=dict(l=20, r=20, t=20, b=20),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig_ona, use_container_width=True)
 
-        # ── TAB 5: INSIGHTS ─────────────────────────────────
-        with tab5:
-            render_insights_tab(df, G, st.session_state.lang, salary)
-
     except Exception as e:
-        st.error(f"Eroare / Error: {e}")
+        st.error(f"{'Eroare la procesarea fișierului' if lang=='Română' else 'Error processing file'}: {e}")
         st.exception(e)
