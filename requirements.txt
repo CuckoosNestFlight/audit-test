@@ -4,3 +4,5 @@ plotly
 openpyxl
 networkx
 numpy
+gspread
+google-auth
