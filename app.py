@@ -4,8 +4,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import networkx as nx
 import numpy as np
+import io
+from datetime import datetime
 
-st.set_page_config(page_title="Team Scientist | Strategic Audit", layout="wide")
+st.set_page_config(page_title="Team Scientist | Diagnostic Strategic", layout="wide")
 
 st.markdown("""
     <style>
@@ -62,9 +64,9 @@ with st.sidebar.expander("ℹ️ Ce măsurăm" if lang == "Română" else "ℹ�
 st.sidebar.markdown("---")
 salary_label = "Salariu mediu lunar estimat (€)" if lang == "Română" else "Estimated avg monthly salary (€)"
 salary_help = (
-    "Opțional. Folosit pentru estimarea costului de înlocuire a unui angajat. Nu este obligatoriu pentru audit."
+    "Opțional. Folosit pentru estimarea costului de înlocuire a unui membru al echipei."
     if lang == "Română" else
-    "Optional. Used to estimate employee replacement cost. Not required for the audit."
+    "Optional. Used to estimate the replacement cost of a team member."
 )
 salary = st.sidebar.number_input(salary_label, value=3000, step=500, help=salary_help)
 
@@ -73,98 +75,159 @@ st.sidebar.markdown("---")
 if lang == "Română":
     st.sidebar.caption(
         "⚠️ Concluziile din acest raport sunt extrase din date și reprezintă indicatori de analiză, "
-        "nu verdicte. Se recomandă discuții directe cu oamenii și analize suplimentare înainte de orice decizie."
+        "nu verdicte. Se recomandă discuții directe cu oamenii și eventual analize suplimentare înainte de orice decizie."
     )
 else:
     st.sidebar.caption(
         "⚠️ The conclusions in this report are data-driven indicators, not verdicts. "
-        "Direct conversations with team members and further analysis are recommended before any decision."
+        "Direct conversations with team members and eventually further analysis are recommended before any decision."
     )
-
-# ── SIDEBAR — TEST MODE ──────────────────────────────────────
-st.sidebar.markdown("---")
-test_mode = st.sidebar.checkbox(
-    "🧪 Sesiune de test / demo" if lang == "Română" else "🧪 Test / demo session",
-    value=False,
-    help="Bifează pentru sesiuni de test. Datele nu vor fi înregistrate." if lang == "Română"
-    else "Check for test sessions. Data will not be recorded."
-)
 
 # ── TRADUCERI UI ─────────────────────────────────────────────
 UI = {
     "Română": {
-        "title":   "🔬 Team Scientist | Diagnostic Strategic",
-        "upload":  "Încarcă fișierul Excel cu datele echipei",
-        "err_col": "❌ Lipsesc coloanele obligatorii:",
-        "warn_hours": "⚠ Ore > 80h/săpt detectate — verifică datele introduse.",
-        "warn_vacation": "⚠ Zile concediu > 30 detectate — posibil eroare de input.",
-        "warn_ona": "⚠ Peste 50% din angajați nu au conexiuni ONA — rețeaua poate fi incompletă.",
+        "title":        "🔬 Team Scientist | Diagnostic Strategic",
+        "upload":       "Încarcă fișierul Excel cu datele echipei",
+        "err_col":      "❌ Lipsesc coloanele obligatorii:",
+        "warn_hours":   "⚠ Ore > 80h/săpt detectate — verifică datele introduse.",
+        "warn_vacation":"⚠ Zile concediu > 30 detectate — posibil eroare de input.",
+        "warn_ona":     "⚠ Peste 50% din membri nu au conexiuni ONA — rețeaua poate fi incompletă.",
         "tab1": "🧩 Insights",
         "tab2": "🔥 Stres & Burnout",
         "tab3": "🤐 Masca Politicoasă",
         "tab4": "✈️ Risc Plecare",
         "tab5": "🕸️ Rețeaua de Relații",
-        "b_desc":  "Scor 0–100. Peste 70 = Risc Ridicat | 50–70 = Atenție.",
-        "b_legend":"Roșu = risc ridicat (>70) | Galben = atenție (50–70) | Verde = în parametri (<50)",
+        "b_desc":   "**Scor 0–100. Peste 70 = Risc Ridicat | 50–70 = Atenție.**",
+        "b_legend": "**Roșu** = risc ridicat (>70) | **Galben** = atenție (50–70) | **Verde** = în parametri (<50)",
         "s_title_chart": "Harta siguranței psihologice",
-        "s_desc":  (
-            "Fiecare punct reprezintă un angajat. "
-            "**Axa X (orizontală):** cât de des recunoaște greșeli în fața echipei (1 = deloc, 5 = deschis). "
-            "**Axa Y (verticală):** cât de des propune idei și inițiative noi (1 = rar, 5 = frecvent). "
-            "**Mărimea punctului:** proporțională cu riscul de mască politicoasă — cu cât e mai mare, cu atât omul tace mai mult. "
-            "**Culoarea:** intensitatea riscului (portocaliu închis = risc ridicat). "
-            "Stânga-jos = tăcere critică pe ambele dimensiuni. Dreapta-sus = colaborare autentică."
+        "s_desc": (
+            "**Siguranța psihologică** înseamnă că oamenii pot exprima ce gândesc fără teama de repercusiuni. "
+            "Când aceasta lipsește, apare **masca politicoasă** — oamenii par ok, dar tac.\n\n"
+            "**Axa X (orizontală):** cât de des recunoaște greșeli în fața echipei (1 = deloc, 5 = deschis).\n\n"
+            "**Axa Y (verticală):** cât de des propune idei și inițiative noi (1 = rar, 5 = frecvent).\n\n"
+            "**Mărimea punctului:** proporțională cu riscul de mască — cu cât e mai mare, cu atât omul tace mai mult.\n\n"
+            "**Culoarea:** intensitatea riscului de nesiguranță psihologică (portocaliu închis = risc ridicat).\n\n"
+            "**Cadrane:** Stânga-sus = Creativ/Defensiv (propune idei, dar nu asumă greșeli). "
+            "Dreapta-sus = Autentic & Sigur (propune și asumă). "
+            "Stânga-jos = Tăcere Critică (nici idei, nici asumare). "
+            "Dreapta-jos = Se simte sigur, e tăcut(ă) (asumă greșeli, dar nu propune)."
         ),
         "s_q_tl":  "Creativ / Defensiv",
         "s_q_tr":  "Autentic & Sigur",
         "s_q_bl":  "Tăcere Critică",
-        "s_q_br":  "Safe but Silent",
-        "f_desc":  "Scor 0–100. Peste 65 = Risc Ridicat | 40–65 = Monitorizare.",
-        "f_cost":  "Înlocuirea unui angajat costă în medie 6–12 luni de productivitate și costuri de recrutare.",
-        "o_desc":  "Dimensiunea nodului = câți colegi te consultă (in-degree) | Culoarea = risc burnout",
-        "o_arrow": "Săgeata indică direcția consultării: de la cel care întreabă spre cel consultat.",
+        "s_q_br":  "Se simte sigur, e tăcut(ă)",
+        "f_desc":   "**Scor 0–100. Peste 65 = Risc Ridicat | 40–65 = Monitorizare.**",
+        "f_cost":   "Înlocuirea unui angajat costă în medie 6–12 luni de productivitate și costuri de recrutare.",
+        "o_desc":   "**Dimensiunea nodului** = câți colegi te consultă (in-degree) | **Culoarea** = risc burnout",
+        "o_arrow":  "**Săgeata** indică direcția consultării: de la cel care întreabă spre cel consultat.",
+        "feedback_link": "💬 Ți-a fost util? 3 întrebări rapide →",
+        "download_template": "📥 Descarcă template Excel",
+        "banner": "🔬 TeamScientist | Diagnostic generat ✓ | Întrebări? [LinkedIn — Răzvan Ghebaur](https://linkedin.com/in/razvanghebaur)",
     },
     "English": {
-        "title":   "🔬 Team Scientist | Strategic Diagnostic",
-        "upload":  "Upload your team data Excel file",
-        "err_col": "❌ Missing required columns:",
-        "warn_hours": "⚠ Hours > 80h/week detected — please check the data.",
-        "warn_vacation": "⚠ Vacation days > 30 detected — possible input error.",
-        "warn_ona": "⚠ Over 50% of employees have no ONA connections — network may be incomplete.",
+        "title":        "🔬 Team Scientist | Strategic Diagnostic",
+        "upload":       "Upload your team data Excel file",
+        "err_col":      "❌ Missing required columns:",
+        "warn_hours":   "⚠ Hours > 80h/week detected — please check the data.",
+        "warn_vacation":"⚠ Vacation days > 30 detected — possible input error.",
+        "warn_ona":     "⚠ Over 50% of team members have no ONA connections — network may be incomplete.",
         "tab1": "🧩 Insights",
         "tab2": "🔥 Stress & Burnout",
         "tab3": "🤐 Polite Mask",
         "tab4": "✈️ Leaving Risk",
         "tab5": "🕸️ Relationship Network",
-        "b_desc":  "Score 0–100. Over 70 = Elevated Risk | 50–70 = Warning.",
-        "b_legend":"Red = elevated risk (>70) | Yellow = warning (50–70) | Green = within range (<50)",
+        "b_desc":   "**Score 0–100. Over 70 = Elevated Risk | 50–70 = Warning.**",
+        "b_legend": "**Red** = elevated risk (>70) | **Yellow** = warning (50–70) | **Green** = within range (<50)",
         "s_title_chart": "Psychological safety map",
-        "s_desc":  (
-            "Each dot represents one employee. "
-            "**Horizontal axis (X):** how often they acknowledge mistakes in front of the team (1 = never, 5 = openly). "
-            "**Vertical axis (Y):** how often they propose new ideas and initiatives (1 = rarely, 5 = frequently). "
-            "**Dot size:** proportional to polite mask risk — the larger the dot, the more the person stays silent. "
-            "**Color:** risk intensity (dark orange = high risk). "
-            "Bottom-left = critical silence on both dimensions. Top-right = authentic collaboration."
+        "s_desc": (
+            "**Psychological safety** means people can express what they think without fear of repercussions. "
+            "When it is missing, the **polite mask** appears — people seem fine, but stay silent.\n\n"
+            "**Horizontal axis (X):** how often they acknowledge mistakes in front of the team (1 = never, 5 = openly).\n\n"
+            "**Vertical axis (Y):** how often they propose new ideas and initiatives (1 = rarely, 5 = frequently).\n\n"
+            "**Dot size:** proportional to mask risk — the larger the dot, the more the person stays silent.\n\n"
+            "**Color:** intensity of psychological safety risk (dark orange = high risk).\n\n"
+            "**Quadrants:** Top-left = Creative/Defensive (proposes ideas, doesn't admit mistakes). "
+            "Top-right = Authentic & Safe (proposes and admits). "
+            "Bottom-left = Critical Silence (neither ideas nor admission). "
+            "Bottom-right = Safe but Silent (admits mistakes, but doesn't propose)."
         ),
         "s_q_tl":  "Creative / Defensive",
         "s_q_tr":  "Authentic & Safe",
         "s_q_bl":  "Critical Silence",
         "s_q_br":  "Safe but Silent",
-        "f_desc":  "Score 0–100. Over 65 = Elevated Risk | 40–65 = Monitor.",
-        "f_cost":  "Replacing one employee costs on average 6–12 months of productivity and recruitment costs.",
-        "o_desc":  "Node size = how many colleagues consult you (in-degree) | Color = burnout risk",
-        "o_arrow": "Arrow direction: from the person asking toward the person being consulted.",
+        "f_desc":   "**Score 0–100. Over 65 = Elevated Risk | 40–65 = Monitor.**",
+        "f_cost":   "Replacing one employee costs on average 6–12 months of productivity and recruitment costs.",
+        "o_desc":   "**Node size** = how many colleagues consult you (in-degree) | **Color** = burnout risk",
+        "o_arrow":  "**Arrow** direction: from the person asking toward the person being consulted.",
+        "feedback_link": "💬 Was this useful? 3 quick questions →",
+        "download_template": "📥 Download Excel template",
+        "banner": "🔬 TeamScientist | Diagnostic generated ✓ | Questions? [LinkedIn — Răzvan Ghebaur](https://linkedin.com/in/razvanghebaur)",
     }
 }
 
+# Ordinea coloanelor reflectă ordinea din template Excel v3: 5 obiective + 4 comportamentale + 1 rețea
 REQUIRED_COLUMNS = [
-    'Nume', 'Ore_Saptamana', 'Presiune_Externa', 'Idei_Noi',
-    'Erori_Asumate', 'Ultima_Marire', 'Scor_Energie',
-    'Zile_Concediu', 'Sfat_De_La'
+    'Nume', 'Ore_Saptamana', 'Vechime_Rol', 'Ultima_Marire',
+    'Zile_Concediu', 'Presiune_Externa', 'Scor_Energie',
+    'Idei_Noi', 'Erori_Asumate', 'Sfat_De_La'
 ]
 
 PLACEHOLDER_NAMES = ['cod anonim', 'ex:', 'exemplu', 'sample', 'test', 'angajat_ex']
+
+SHEET_ID = "1wY_YZQf72T6d_smb0qYrIWnB_eIolB88IVae4J94ZU0"
+
+# ════════════════════════════════════════════════════════════
+# GOOGLE SHEETS LOGGING
+# ════════════════════════════════════════════════════════════
+
+def log_to_sheets(df, G, lang):
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(SHEET_ID).sheet1
+
+        n = len(df)
+        n_critical = int(((df['B_Score'] > 70) | (df['F_Score'] > 65)).sum())
+        n_warning  = int(((df['B_Score'].between(50, 70)) | (df['F_Score'].between(40, 65))).sum())
+        n_ok       = n - n_critical - n_warning
+        n_hubs     = int((df['ONA_InDegree'] >= 3).sum())
+        silent_pct = round((df['S_Raw'] < 3).sum() / n * 100, 1)
+
+        row = [
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
+            lang, n,
+            round(df['B_Score'].mean(), 1),
+            round(df['F_Score'].mean(), 1),
+            round(df['S_Score'].mean(), 1),
+            n_critical, n_warning, n_ok, n_hubs, silent_pct,
+            round(df['Ore_Saptamana'].mean(), 1),
+            round(df['Zile_Concediu'].mean(), 1),
+            round(df['Scor_Energie'].mean(), 1),
+            round(df['Presiune_Externa'].mean(), 1),
+        ]
+
+        if not sheet.get_all_values():
+            headers = [
+                "Timestamp", "Limba", "Nr_Membri",
+                "Avg_Burnout", "Avg_FlightRisk", "Avg_MaskRisk",
+                "N_Critical", "N_Warning", "N_OK",
+                "N_Hubs", "Silent_Pct",
+                "Avg_Ore", "Avg_Concediu", "Avg_Energie", "Avg_Presiune"
+            ]
+            sheet.append_row(headers)
+
+        sheet.append_row(row)
+    except Exception:
+        pass  # Logging silențios
+
 
 # ════════════════════════════════════════════════════════════
 # FORMULE
@@ -173,7 +236,6 @@ PLACEHOLDER_NAMES = ['cod anonim', 'ex:', 'exemplu', 'sample', 'test', 'angajat_
 def compute_indicators(df):
     df = df.copy()
 
-    # Elimină rânduri placeholder
     mask_placeholder = df['Nume'].astype(str).str.lower().apply(
         lambda x: any(p in x for p in PLACEHOLDER_NAMES)
     )
@@ -270,8 +332,7 @@ TEXTS = {
         "pattern_cultural_silence_desc": (
             "{pct}% din echipă are scor Polite Mask sub 3. Aceasta poate indica o problemă sistemică "
             "de microcultură, nu individuală. Oamenii tac pentru că nu se simt în siguranță să greșească "
-            "sau să propună. Intervenția necesară este la nivel de echipă, nu de angajat. "
-            "De luat în calcul și alți factori care nu sunt incluși aici (de exemplu vechimea)."
+            "sau să propună. Intervenția necesară este la nivel de echipă, nu de angajat."
         ),
         "pattern_hub_risk": "Nod central supraîncărcat — risc sistemic",
         "pattern_hub_risk_desc": (
@@ -284,7 +345,7 @@ TEXTS = {
         "pattern_isolation_desc": (
             "{names} prezintă izolare în rețeaua de relații combinată cu un scor scăzut de siguranță "
             "psihologică. Aceștia nu solicită ajutor și contribuie limitat — un posibil semnal timpuriu "
-            "de dezangajare. De luat în calcul și alți factori (vechime, stil de lucru, personalitate)."
+            "de dezangajare. De luat în calcul și alți factori (stil de lucru, personalitate)."
         ),
         "pattern_silent_stars": "Performeri cu potențial neexploatat",
         "pattern_silent_stars_desc": (
@@ -293,9 +354,7 @@ TEXTS = {
             "mai permisiv cu greșelile și propunerile."
         ),
         "pattern_ok": "Nucleu cu indicatori stabili",
-        "pattern_ok_desc": (
-            "{names} prezintă toți indicatorii în parametri normali în această analiză."
-        ),
+        "pattern_ok_desc": "{names} prezintă toți indicatorii în parametri normali în această analiză.",
         "burnout_critical": (
             "{name} prezintă indicatori de stres ridicat ({b:.0f}/100). "
             "Lucrează {ore}h/săptămână, {concediu} zi(e) concediu efectuate, energie {energie}/5. "
@@ -352,8 +411,7 @@ TEXTS = {
         "pattern_cultural_silence_desc": (
             "{pct}% of the team scores below 3 on the Polite Mask indicator. This may indicate a systemic "
             "micro-culture issue, not an individual one. People are staying silent because they don't feel "
-            "safe to make mistakes or propose ideas. The intervention needed is at team level, not per person. "
-            "Other factors not included here should also be considered (e.g. tenure)."
+            "safe to make mistakes or propose ideas. The intervention needed is at team level, not per person."
         ),
         "pattern_hub_risk": "Overloaded central hub — systemic risk",
         "pattern_hub_risk_desc": (
@@ -366,7 +424,7 @@ TEXTS = {
         "pattern_isolation_desc": (
             "{names} show network isolation combined with a low psychological safety score. "
             "They don't seek help and contribute minimally — a possible early signal of disengagement. "
-            "Other factors should also be considered (tenure, work style, personality)."
+            "Other factors should also be considered (work style, personality)."
         ),
         "pattern_silent_stars": "Performers with untapped potential",
         "pattern_silent_stars_desc": (
@@ -375,9 +433,7 @@ TEXTS = {
             "with mistakes and proposals."
         ),
         "pattern_ok": "Core with stable indicators",
-        "pattern_ok_desc": (
-            "{names} show all indicators within normal parameters in this analysis."
-        ),
+        "pattern_ok_desc": "{names} show all indicators within normal parameters in this analysis.",
         "burnout_critical": (
             "{name} shows elevated stress indicators ({b:.0f}/100). "
             "Working {ore}h/week, {concediu} vacation day(s) taken, energy {energie}/5. "
@@ -460,7 +516,7 @@ def action_card(text, level="w2"):
 def section_header(title, color="#1C2833"):
     st.markdown(
         f"<div style='margin:24px 0 10px;padding:8px 14px;"
-        f"background:{color}18;border-left:3px solid {color};"
+        f"background:rgba(255,255,255,0.85);border-left:4px solid {color};"
         f"border-radius:0 6px 6px 0;font-weight:600;font-size:15px;color:{color}'>"
         f"{title}</div>",
         unsafe_allow_html=True
@@ -510,9 +566,7 @@ def generate_individual_insights(row, t, salary):
 
     return {
         "burnout": (bt, bl), "leaving": (ft, fl), "mask": (mt, ml),
-        "actions_w1": actions_w1,
-        "actions_w2": actions_w2,
-        "actions_w3": actions_w3,
+        "actions_w1": actions_w1, "actions_w2": actions_w2, "actions_w3": actions_w3,
         "is_critical": b > 70 or f > 65,
         "is_warning":  (50 < b <= 70) or (40 < f <= 65),
     }
@@ -575,7 +629,6 @@ def render_insights_tab(df, G, lang, salary=3000):
     n_ok       = len(df) - n_critical - n_warning
     n_risk     = n_critical + n_warning
 
-    # ── EXECUTIVE SUMMARY — metric cards ────────────────────
     section_header(f"🔬 {t['exec_title']}", "#2E4057")
 
     col1, col2, col3 = st.columns(3)
@@ -606,7 +659,6 @@ def render_insights_tab(df, G, lang, salary=3000):
 
     st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
 
-    # ── KEY INSIGHTS ─────────────────────────────────────────
     section_header(f"💡 {t['key_insights']}", "#2E4057")
     if n_critical > 0:
         insight_card(t["exec_critical"].format(n_critical=n_critical), "critical")
@@ -615,7 +667,6 @@ def render_insights_tab(df, G, lang, salary=3000):
     if n_critical == 0 and n_warning == 0:
         insight_card(t["exec_all_ok"], "ok")
 
-    # Hub alert in key insights
     hubs = df[(df['ONA_InDegree'] >= 3) & (df['B_Score'] > 60) & (df['F_Score'] > 50)]
     for _, row in hubs.iterrows():
         if lang == "Română":
@@ -629,7 +680,6 @@ def render_insights_tab(df, G, lang, salary=3000):
                 f"elevated stress ({row['B_Score']:.0f}) and leaving risk ({row['F_Score']:.0f}). "
                 f"This is the priority scenario in this analysis.", "critical")
 
-    # ── TEAM PATTERNS ────────────────────────────────────────
     patterns = detect_team_patterns(df, G, t)
     if patterns:
         section_header(f"🕸️ {t['sec_patterns']}", "#8E44AD")
@@ -637,7 +687,6 @@ def render_insights_tab(df, G, lang, salary=3000):
             with st.expander(p["title"], expanded=(p["level"] == "critical")):
                 insight_card(p["text"], p["level"])
 
-    # ── URGENT INDIVIDUAL ────────────────────────────────────
     urgent = df[(df['B_Score'] > 70) | (df['F_Score'] > 65)].copy()
     urgent['_max'] = urgent[['B_Score', 'F_Score']].max(axis=1)
     urgent = urgent.sort_values('_max', ascending=False)
@@ -649,14 +698,12 @@ def render_insights_tab(df, G, lang, salary=3000):
             with st.expander(
                 f"{row['Nume']} — Burnout: {row['B_Score']:.0f} | "
                 f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f} | "
-                f"Mask: {row['S_Raw']:.1f}",
-                expanded=True
+                f"Mask: {row['S_Raw']:.1f}", expanded=True
             ):
                 insight_card(f"🔥 {ins['burnout'][0]}", ins['burnout'][1])
                 insight_card(f"✈️ {ins['leaving'][0]}", ins['leaving'][1])
                 insight_card(f"🤐 {ins['mask'][0]}", ins['mask'][1])
 
-    # ── MONITOR ──────────────────────────────────────────────
     monitor = df[
         ~((df['B_Score'] > 70) | (df['F_Score'] > 65)) &
         ((df['B_Score'] > 50) | (df['F_Score'] > 40))
@@ -671,14 +718,12 @@ def render_insights_tab(df, G, lang, salary=3000):
             with st.expander(
                 f"{row['Nume']} — Burnout: {row['B_Score']:.0f} | "
                 f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f} | "
-                f"Mask: {row['S_Raw']:.1f}",
-                expanded=False
+                f"Mask: {row['S_Raw']:.1f}", expanded=False
             ):
                 insight_card(f"🔥 {ins['burnout'][0]}", ins['burnout'][1])
                 insight_card(f"✈️ {ins['leaving'][0]}", ins['leaving'][1])
                 insight_card(f"🤐 {ins['mask'][0]}", ins['mask'][1])
 
-    # ── ACTIONS — 3 urgency levels, max 3 each ───────────────
     all_w1, all_w2, all_w3 = [], [], []
     for _, row in df.iterrows():
         ins = generate_individual_insights(row, t, salary)
@@ -708,7 +753,6 @@ def render_insights_tab(df, G, lang, salary=3000):
             for a in all_w3[:3]:
                 action_card(a, "w3")
 
-    # ── STABLE CORE ──────────────────────────────────────────
     stable = df[(df['B_Score'] < 40) & (df['F_Score'] < 35) & (df['S_Raw'] >= 3.5)]
     if not stable.empty:
         section_header(f"💚 {t['sec_ok']}", "#1E8449")
@@ -716,12 +760,219 @@ def render_insights_tab(df, G, lang, salary=3000):
 
 
 # ════════════════════════════════════════════════════════════
+# LANDING PAGE
+# ════════════════════════════════════════════════════════════
+
+def render_landing_page(lang, template_bytes):
+    l = UI[lang]
+
+    if lang == "Română":
+        st.markdown("""
+<div style='max-width:780px;margin:0 auto;padding:2rem 0 1rem;'>
+  <div style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;
+              text-transform:uppercase;margin-bottom:1.2rem;'>🔬 TeamScientist</div>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    Mă numesc <strong>Răzvan Ghebaur</strong> și te invit să folosești un instrument
+    care îți poate schimba modul în care îți conduci echipa.
+    Vei avea nevoie de <strong>15–20 de minute</strong>.
+  </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    Dacă ai în coordonare directă între <strong>8 și 20 de oameni</strong> și vrei să înțelegi
+    ce se întâmplă cu adevărat în echipa ta — dincolo de ce ți se raportează și de ce observi direct —
+    vei vedea și ce arată datele.
+  </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1.5rem;'>
+    Ca să poți lua decizii mai în cunoștință de cauză, la momentul potrivit.
+    <strong>Înainte să fie prea târziu.</strong>
+  </p>
+  <div style='border-left:3px solid rgba(128,128,128,0.25);padding:0.75rem 1.1rem;
+              margin:0 0 2rem;background:rgba(128,128,128,0.04);border-radius:0 8px 8px 0;'>
+    <p style='font-size:14px;line-height:1.7;margin:0;opacity:0.75;'>
+      Instrumentul este bazat pe date furnizate de tine și transformă informațiile pe care le ai
+      deja despre echipa ta într-un diagnostic clar: cine e aproape de burnout, cine se gândește
+      să plece, unde există tăcere în loc de contribuție și cum arată rețeaua informală de relații.
+    </p>
+  </div>
+</div>""", unsafe_allow_html=True)
+    else:
+        st.markdown("""
+<div style='max-width:780px;margin:0 auto;padding:2rem 0 1rem;'>
+  <div style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;
+              text-transform:uppercase;margin-bottom:1.2rem;'>🔬 TeamScientist</div>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    My name is <strong>Răzvan Ghebaur</strong> and I invite you to use an instrument
+    that can change the way you lead your team.
+    You'll need <strong>15–20 minutes</strong>.
+  </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    If you directly manage between <strong>8 and 20 people</strong> and want to understand
+    what's really happening in your team — beyond what gets reported and what you observe directly —
+    you'll also see what the data shows.
+  </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1.5rem;'>
+    So you can make better-informed decisions, at the right moment.
+    <strong>Before it's too late.</strong>
+  </p>
+  <div style='border-left:3px solid rgba(128,128,128,0.25);padding:0.75rem 1.1rem;
+              margin:0 0 2rem;background:rgba(128,128,128,0.04);border-radius:0 8px 8px 0;'>
+    <p style='font-size:14px;line-height:1.7;margin:0;opacity:0.75;'>
+      The instrument is data-driven and transforms information you already have about your team
+      into a clear diagnostic: who is close to burnout, who is thinking about leaving,
+      where silence replaces contribution, and what the informal relationship network looks like.
+    </p>
+  </div>
+</div>""", unsafe_allow_html=True)
+
+    # CE CÂȘTIGI
+    lbl_gains = "Ce câștigi" if lang == "Română" else "What you gain"
+    st.markdown(f"<p style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;"
+                f"text-transform:uppercase;margin:0 0 0.75rem;'>{lbl_gains}</p>",
+                unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(
+            "<div style='background:#FCEBEB;border-radius:12px;padding:1.1rem;"
+            "border:0.5px solid #F09595;'>"
+            "<div style='font-size:20px;margin-bottom:8px;'>🔥</div>"
+            f"<p style='font-size:13px;font-weight:600;color:#A32D2D;margin:0 0 6px;'>"
+            f"{'Previi burnout-ul' if lang=='Română' else 'Prevent burnout'}</p>"
+            f"<p style='font-size:12px;line-height:1.5;color:#791F1F;margin:0;'>"
+            f"{'Identifici cine lucrează peste limită și cine are energia în scădere — înainte ca problema să devină vizibilă.' if lang=='Română' else 'Identify who is working beyond their limit and whose energy is declining — before it becomes visible as a problem.'}"
+            f"</p></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown(
+            "<div style='background:#FAEEDA;border-radius:12px;padding:1.1rem;"
+            "border:0.5px solid #FAC775;'>"
+            "<div style='font-size:20px;margin-bottom:8px;'>✈️</div>"
+            f"<p style='font-size:13px;font-weight:600;color:#854F0B;margin:0 0 6px;'>"
+            f"{'Reduci riscul de plecare' if lang=='Română' else 'Reduce leaving risk'}</p>"
+            f"<p style='font-size:12px;line-height:1.5;color:#633806;margin:0;'>"
+            f"{'Afli cine are factori de risc și cât te-ar costa înlocuirea — cu cifre, nu cu presupuneri.' if lang=='Română' else 'Find out who has risk factors and what replacement would cost — with numbers, not assumptions.'}"
+            f"</p></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown(
+            "<div style='background:#E1F5EE;border-radius:12px;padding:1.1rem;"
+            "border:0.5px solid #5DCAA5;'>"
+            "<div style='font-size:20px;margin-bottom:8px;'>🕸️</div>"
+            f"<p style='font-size:13px;font-weight:600;color:#0F6E56;margin:0 0 6px;'>"
+            f"{'Vezi rețeaua reală' if lang=='Română' else 'See the real network'}</p>"
+            f"<p style='font-size:12px;line-height:1.5;color:#085041;margin:0;'>"
+            f"{'Descoperi cine sunt hub-urile informale, cine e izolat și unde există silozuri de colaborare.' if lang=='Română' else 'Discover who the informal hubs are, who is isolated, and where collaboration silos exist.'}"
+            f"</p></div>", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
+
+    # CUM FUNCȚIONEAZĂ — 3 pași orizontali
+    lbl_how = "Cum funcționează" if lang == "Română" else "How it works"
+    st.markdown(f"<p style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;"
+                f"text-transform:uppercase;margin:0 0 0.75rem;'>{lbl_how}</p>",
+                unsafe_allow_html=True)
+
+    p1, p2, p3 = st.columns(3)
+
+    step_style = ("background:rgba(128,128,128,0.04);border-radius:12px;"
+                  "border:0.5px solid rgba(128,128,128,0.15);padding:1.1rem;")
+    num_style  = ("width:24px;height:24px;border-radius:50%;"
+                  "background:rgba(128,128,128,0.1);border:0.5px solid rgba(128,128,128,0.2);"
+                  "display:inline-flex;align-items:center;justify-content:center;"
+                  "font-size:11px;font-weight:600;color:#666;margin-right:8px;")
+
+    with p1:
+        desc1 = ("Descarcă template-ul Excel și completează datele echipei tale urmând "
+                 "instrucțiunile din fișier. Datele sunt cele pe care le știi deja sau pe care le poți afla ușor."
+                 if lang == "Română" else
+                 "Download the Excel template and fill in your team data following the instructions in the file. "
+                 "No special preparation needed — the data is what you already know.")
+        title1 = "Descarcă și completează" if lang == "Română" else "Download and fill in"
+        st.markdown(
+            f"<div style='{step_style}'>"
+            f"<div style='display:flex;align-items:center;margin-bottom:10px;'>"
+            f"<span style='{num_style}'>1</span>"
+            f"<span style='font-size:13px;font-weight:600;'>{title1}</span></div>"
+            f"<p style='font-size:11px;color:#888;margin:0 0 8px;'>~15 {'minute' if lang=='Română' else 'minutes'}</p>"
+            f"<p style='font-size:12px;line-height:1.5;opacity:0.75;margin:0;'>{desc1}</p>"
+            f"</div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+        if template_bytes:
+            st.download_button(
+                label=l["download_template"],
+                data=template_bytes,
+                file_name="TeamScientist_Template.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
+
+    with p2:
+        desc2 = ("Încarcă fișierul completat direct în aplicație. Diagnosticul se generează automat."
+                 if lang == "Română" else
+                 "Upload the completed file directly into the application. The diagnostic is generated automatically.")
+        title2 = "Uploadează fișierul" if lang == "Română" else "Upload the file"
+        st.markdown(
+            f"<div style='{step_style}'>"
+            f"<div style='display:flex;align-items:center;margin-bottom:10px;'>"
+            f"<span style='{num_style}'>2</span>"
+            f"<span style='font-size:13px;font-weight:600;'>{title2}</span></div>"
+            f"<p style='font-size:11px;color:#888;margin:0 0 8px;'>30 {'secunde' if lang=='Română' else 'seconds'}</p>"
+            f"<p style='font-size:12px;line-height:1.5;opacity:0.75;margin:0;'>{desc2}</p>"
+            f"</div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader(
+            l["upload"], type=["xlsx"], label_visibility="collapsed"
+        )
+
+    with p3:
+        desc3 = ("5 tab-uri cu vizualizări clare și recomandări concrete. "
+                 "De la rezumat executiv până la harta relațiilor din echipă."
+                 if lang == "Română" else
+                 "5 tabs with clear visualizations and concrete recommendations. "
+                 "From executive summary to the team relationship map.")
+        title3 = "Explorează diagnosticul" if lang == "Română" else "Explore the diagnostic"
+        st.markdown(
+            f"<div style='{step_style}'>"
+            f"<div style='display:flex;align-items:center;margin-bottom:10px;'>"
+            f"<span style='{num_style}'>3</span>"
+            f"<span style='font-size:13px;font-weight:600;'>{title3}</span></div>"
+            f"<p style='font-size:11px;color:#888;margin:0 0 8px;'>{'cât vrei' if lang=='Română' else 'as long as you want'}</p>"
+            f"<p style='font-size:12px;line-height:1.5;opacity:0.75;margin:0;'>{desc3}</p>"
+            f"</div>", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
+
+    anon_text = ("Date 100% anonimizate. Niciun nume real nu este stocat sau procesat."
+                 if lang == "Română" else
+                 "100% anonymized data. No real names are stored or processed.")
+    linkedin_text = "Întrebări? LinkedIn →" if lang == "Română" else "Questions? LinkedIn →"
+    st.markdown(
+        f"<div style='display:flex;align-items:center;justify-content:space-between;"
+        f"padding:0.75rem 1rem;background:rgba(128,128,128,0.05);"
+        f"border-radius:8px;border:0.5px solid rgba(128,128,128,0.15);'>"
+        f"<div style='display:flex;align-items:center;gap:8px;'>"
+        f"<div style='width:8px;height:8px;border-radius:50%;background:#1D9E75;flex-shrink:0;'></div>"
+        f"<span style='font-size:12px;opacity:0.7;'>{anon_text}</span></div>"
+        f"<a href='https://linkedin.com/in/razvanghebaur' target='_blank' "
+        f"style='font-size:12px;color:#2471A3;text-decoration:none;white-space:nowrap;margin-left:1rem;'>"
+        f"{linkedin_text}</a></div>",
+        unsafe_allow_html=True
+    )
+
+    return uploaded_file
+
+
+# ════════════════════════════════════════════════════════════
 # APP PRINCIPAL
 # ════════════════════════════════════════════════════════════
 
 l = UI[lang]
-st.title(l["title"])
-uploaded_file = st.file_uploader(l["upload"], type=["xlsx"])
+
+# Încarcă template-ul pentru butonul de download
+try:
+    with open("TeamScientist_Template.xlsx", "rb") as f:
+        template_bytes = f.read()
+except FileNotFoundError:
+    template_bytes = b""
+
+uploaded_file = render_landing_page(lang, template_bytes)
 
 if uploaded_file:
     try:
@@ -741,9 +992,15 @@ if uploaded_file:
         df, G = compute_indicators(df_raw)
 
         if len(df) == 0:
-            st.error("Nu au fost găsiți angajați valizi în fișier. Verifică că datele sunt completate corect." if lang == "Română"
-                     else "No valid employees found in the file. Please check that data is correctly filled in.")
+            st.error(
+                "Nu au fost găsiți membri valizi în fișier. Verifică că datele sunt completate corect."
+                if lang == "Română" else
+                "No valid team members found in the file. Please check that data is correctly filled in."
+            )
             st.stop()
+
+        # Log agregat în Google Sheets (silențios)
+        log_to_sheets(df, G, lang)
 
         # Data quality warnings
         if (df['Ore_Saptamana'] > 80).any():
@@ -754,30 +1011,54 @@ if uploaded_file:
         if sfat_empty.sum() > len(df) * 0.5:
             st.warning(l["warn_ona"])
 
-        # ── TABS ─────────────────────────────────────────────
+        # Banner compact după upload
+        st.markdown(
+            f"<div style='background:rgba(128,128,128,0.07);border-radius:8px;"
+            f"padding:10px 16px;margin:1rem 0;font-size:13px;'>{l['banner']}</div>",
+            unsafe_allow_html=True
+        )
+
+        # TABS
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             l["tab1"], l["tab2"], l["tab3"], l["tab4"], l["tab5"]
         ])
 
-        # ── TAB 1: INSIGHTS ──────────────────────────────────
+        # TAB 1: INSIGHTS
         with tab1:
             render_insights_tab(df, G, lang, salary)
 
-        # ── TAB 2: STRES & BURNOUT ───────────────────────────
+        # TAB 2: STRES & BURNOUT
         with tab2:
-            st.caption(l["b_desc"])
-            st.caption(l["b_legend"])
+            st.markdown(l["b_desc"])
+            st.markdown(l["b_legend"])
             df_b = df.sort_values('B_Score', ascending=True)
             colors_b = [
                 '#E74C3C' if s > 70 else '#F39C12' if s > 50 else '#27AE60'
                 for s in df_b['B_Score']
             ]
+            ore_lbl  = "Ore/săpt" if lang == "Română" else "Hours/week"
+            conc_lbl = "Zile concediu" if lang == "Română" else "Vacation days"
+            en_lbl   = "Energie" if lang == "Română" else "Energy"
+
             fig_b = go.Figure(go.Bar(
                 x=df_b['B_Score'], y=df_b['Nume'],
                 orientation='h',
                 marker_color=colors_b,
                 text=df_b['B_Score'].round(1),
-                textposition='outside'
+                textposition='outside',
+                customdata=np.stack([
+                    df_b['Ore_Saptamana'],
+                    df_b['Zile_Concediu'],
+                    df_b['Scor_Energie']
+                ], axis=-1),
+                hovertemplate=(
+                    f"<b>%{{y}}</b><br>"
+                    f"Burnout: %{{x:.1f}}/100<br>"
+                    f"{ore_lbl}: %{{customdata[0]:.0f}}<br>"
+                    f"{conc_lbl}: %{{customdata[1]:.0f}}<br>"
+                    f"{en_lbl}: %{{customdata[2]:.0f}}/5"
+                    "<extra></extra>"
+                )
             ))
             fig_b.update_layout(
                 xaxis=dict(range=[0, 115], title="Burnout Score"),
@@ -789,16 +1070,15 @@ if uploaded_file:
             )
             st.plotly_chart(fig_b, use_container_width=True)
 
-        # ── TAB 3: MASCA POLITICOASĂ ─────────────────────────
+        # TAB 3: MASCA POLITICOASĂ
         with tab3:
-            st.markdown(l["s_title_chart"])
-            st.caption(l["s_desc"])
+            st.markdown(f"### {l['s_title_chart']}")
+            st.markdown(l["s_desc"])
             st.markdown("---")
 
             fig_s = px.scatter(
                 df, x="Erori_Asumate", y="Idei_Noi",
-                size="S_Size",
-                color="S_Score",
+                size="S_Size", color="S_Score",
                 color_continuous_scale='Oranges',
                 hover_name="Nume",
                 hover_data={
@@ -813,10 +1093,9 @@ if uploaded_file:
                     "S_Score": "Risc mască (%)" if lang == "Română" else "Mask risk (%)"
                 }
             )
-            # Custom hover template with human-readable labels
             erori_lbl = "Asumare erori" if lang == "Română" else "Error acknowledgment"
             idei_lbl  = "Propunere idei" if lang == "Română" else "Idea proposals"
-            risk_lbl  = "Risc mască" if lang == "Română" else "Mask risk"
+            risk_lbl  = "Risc nesiguranță" if lang == "Română" else "Safety risk"
             fig_s.update_traces(
                 hovertemplate=(
                     f"<b>%{{hovertext}}</b><br>"
@@ -828,17 +1107,14 @@ if uploaded_file:
             )
             fig_s.add_vline(x=3.0, line_dash="dot", line_color="rgba(150,150,150,0.6)")
             fig_s.add_hline(y=3.0, line_dash="dot", line_color="rgba(150,150,150,0.6)")
-
-            # Quadrant labels
             fig_s.add_annotation(x=1.5, y=4.5, text=l["s_q_tl"],
-                                  showarrow=False, font=dict(size=11, color="rgba(150,150,150,0.8)"))
+                                  showarrow=False, font=dict(size=13, color="rgba(150,150,150,0.9)"))
             fig_s.add_annotation(x=4.2, y=4.5, text=l["s_q_tr"],
-                                  showarrow=False, font=dict(size=11, color="rgba(100,180,100,0.9)"))
+                                  showarrow=False, font=dict(size=13, color="rgba(100,180,100,0.9)"))
             fig_s.add_annotation(x=1.5, y=1.2, text=l["s_q_bl"],
-                                  showarrow=False, font=dict(size=11, color="rgba(200,80,80,0.9)"))
+                                  showarrow=False, font=dict(size=13, color="rgba(200,80,80,0.9)"))
             fig_s.add_annotation(x=4.2, y=1.2, text=l["s_q_br"],
-                                  showarrow=False, font=dict(size=11, color="rgba(200,150,50,0.9)"))
-
+                                  showarrow=False, font=dict(size=13, color="rgba(200,150,50,0.9)"))
             fig_s.update_layout(
                 height=500,
                 margin=dict(l=10, r=10, t=20, b=20),
@@ -847,14 +1123,12 @@ if uploaded_file:
             )
             st.plotly_chart(fig_s, use_container_width=True)
 
-        # ── TAB 4: RISC PLECARE ──────────────────────────────
+        # TAB 4: RISC PLECARE
         with tab4:
-            st.caption(l["f_desc"])
+            st.markdown(l["f_desc"])
             st.info(l["f_cost"])
 
             df_f = df.sort_values('F_Score', ascending=True).copy()
-
-            # Cost per employee if salary set
             if salary > 0:
                 df_f['Cost_Est'] = df_f['F_Score'].apply(
                     lambda s: f"€{salary*6:,.0f}–€{salary*12:,.0f}" if s > 65 else ""
@@ -864,12 +1138,29 @@ if uploaded_file:
                 '#E74C3C' if s > 65 else '#F39C12' if s > 40 else '#27AE60'
                 for s in df_f['F_Score']
             ]
+            marire_lbl = "Ultima mărire" if lang == "Română" else "Last raise"
+            en_lbl2    = "Energie" if lang == "Română" else "Energy"
+            cons_lbl   = "Consultat de" if lang == "Română" else "Consulted by"
+
             fig_f = go.Figure(go.Bar(
                 x=df_f['F_Score'], y=df_f['Nume'],
                 orientation='h',
                 marker_color=colors_f,
                 text=df_f['F_Score'].round(1),
-                textposition='outside'
+                textposition='outside',
+                customdata=np.stack([
+                    df_f['Ultima_Marire'],
+                    df_f['Scor_Energie'],
+                    df_f['ONA_InDegree']
+                ], axis=-1),
+                hovertemplate=(
+                    f"<b>%{{y}}</b><br>"
+                    f"{'Risc plecare' if lang=='Română' else 'Leaving risk'}: %{{x:.1f}}/100<br>"
+                    f"{marire_lbl}: %{{customdata[0]:.0f}} {'luni' if lang=='Română' else 'months'}<br>"
+                    f"{en_lbl2}: %{{customdata[1]:.0f}}/5<br>"
+                    f"{cons_lbl}: %{{customdata[2]:.0f}} {'colegi' if lang=='Română' else 'colleagues'}"
+                    "<extra></extra>"
+                )
             ))
             fig_f.update_layout(
                 xaxis=dict(range=[0, 115], title="Leaving Risk Score"),
@@ -881,24 +1172,23 @@ if uploaded_file:
             )
             st.plotly_chart(fig_f, use_container_width=True)
 
-            # Cost table for high-risk employees
             if salary > 0:
                 high_risk = df_f[df_f['F_Score'] > 65][['Nume', 'F_Score', 'Cost_Est']].sort_values('F_Score', ascending=False)
                 if not high_risk.empty:
                     st.markdown(
-                        f"**{'Cost estimat înlocuire — angajați cu risc ridicat' if lang=='Română' else 'Estimated replacement cost — high-risk employees'}**"
+                        f"**{'Cost estimat înlocuire — membri cu risc ridicat' if lang=='Română' else 'Estimated replacement cost — high-risk members'}**"
                     )
                     high_risk.columns = [
-                        'Cod angajat' if lang=='Română' else 'Employee code',
+                        'Cod' if lang=='Română' else 'Code',
                         'Scor risc' if lang=='Română' else 'Risk score',
                         'Cost estimat' if lang=='Română' else 'Estimated cost'
                     ]
                     st.dataframe(high_risk, hide_index=True, use_container_width=True)
 
-        # ── TAB 5: REȚEAUA DE RELAȚII ────────────────────────
+        # TAB 5: REȚEAUA DE RELAȚII
         with tab5:
-            st.caption(l["o_desc"])
-            st.caption(l["o_arrow"])
+            st.markdown(l["o_desc"])
+            st.markdown(l["o_arrow"])
 
             pos = nx.spring_layout(G, k=1.2, seed=42)
             fig_ona = go.Figure()
@@ -916,8 +1206,12 @@ if uploaded_file:
                 ))
 
             nx_nodes = list(G.nodes())
-            b_vals = [G.nodes[n].get('B', 0) for n in nx_nodes]
-            sizes  = [(G.in_degree(n) * 12) + 14 for n in nx_nodes]
+            b_vals   = [G.nodes[n].get('B', 0) for n in nx_nodes]
+            sizes    = [(G.in_degree(n) * 12) + 14 for n in nx_nodes]
+            in_deg   = [G.in_degree(n) for n in nx_nodes]
+
+            cons_lbl2 = "consultat de" if lang == "Română" else "consulted by"
+            col_lbl2  = "colegi" if lang == "Română" else "colleagues"
 
             fig_ona.add_trace(go.Scatter(
                 x=[pos[n][0] for n in nx_nodes],
@@ -925,19 +1219,25 @@ if uploaded_file:
                 mode='markers+text',
                 text=nx_nodes,
                 textposition="bottom center",
+                customdata=list(zip(in_deg, b_vals)),
                 marker=dict(
                     size=sizes,
                     color=b_vals,
                     colorscale='RdYlGn_r',
                     showscale=True,
                     colorbar=dict(
-                        title="Burnout" if lang=="English" else "Burnout",
+                        title="Burnout",
                         tickvals=[0, 50, 100],
                         ticktext=["0", "50", "100"]
                     ),
                     line=dict(width=1, color='rgba(255,255,255,0.3)')
                 ),
-                hovertemplate="<b>%{text}</b><br>Burnout: %{marker.color:.0f}<extra></extra>",
+                hovertemplate=(
+                    f"<b>%{{text}}</b><br>"
+                    f"{cons_lbl2} %{{customdata[0]}} {col_lbl2}<br>"
+                    f"Burnout: %{{customdata[1]:.0f}}/100"
+                    "<extra></extra>"
+                ),
                 showlegend=False
             ))
 
@@ -950,6 +1250,15 @@ if uploaded_file:
                 paper_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig_ona, use_container_width=True)
+
+        # FEEDBACK LINK
+        st.markdown("---")
+        st.markdown(
+            f"<div style='text-align:center;padding:1rem;font-size:13px;opacity:0.65;'>"
+            f"<a href='#' style='color:#2471A3;text-decoration:none;'>{l['feedback_link']}</a>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
 
     except Exception as e:
         st.error(f"{'Eroare la procesarea fișierului' if lang=='Română' else 'Error processing file'}: {e}")
