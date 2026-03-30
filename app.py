@@ -214,29 +214,29 @@ def render_financial_banner(fi, lang, salary_monthly):
     st.markdown(
         f"<div style='background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:14px;"
         f"padding:20px 24px;margin:16px 0;border:1px solid rgba(255,255,255,0.1);'>"
-        f"<div style='font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:6px;'>"
+        f"<div style='font-size:15px;color:rgba(255,255,255,0.6);margin-bottom:6px;'>"
         f"{total_txt}</div>"
         f"<div style='font-size:32px;font-weight:700;color:#FF6B6B;line-height:1;'>"
         f"{fmt_eur(fi['total_min'])} – {fmt_eur(fi['total_max'])}"
         f"<span style='font-size:16px;font-weight:400;color:rgba(255,255,255,0.6);'>{per_year}</span></div>"
         f"<div style='margin-top:14px;display:flex;gap:16px;flex-wrap:wrap;'>"
         f"<div style='background:rgba(255,255,255,0.07);border-radius:8px;padding:10px 14px;flex:1;min-width:160px;'>"
-        f"<div style='font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:3px;'>🔥 Burnout</div>"
+        f"<div style='font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:3px;'>🔥 Burnout</div>"
         f"<div style='font-size:18px;font-weight:600;color:#FFA07A;'>{fmt_eur(fi['burnout'])}<span style='font-size:11px;color:rgba(255,255,255,0.4);'>{per_year}</span></div>"
-        f"<div style='font-size:11px;color:rgba(255,255,255,0.4);margin-top:3px;'>{'Angajații epuizați lucrează la 70–85% din capacitate. Restul se pierde în erori, lentoare și absenteism ascuns (sunt prezenți doar fizic).' if lang=='Română' else 'Exhausted employees work at 70–85% capacity. The rest is lost in errors, slowdowns and hidden absenteeism (physically present only).'}</div>"
+        f"<div style='font-size:13px;color:rgba(255,255,255,0.55);margin-top:3px;'>{'Angajații epuizați lucrează la 70–85% din capacitate. Restul se pierde în erori, lentoare și absenteism ascuns (sunt prezenți doar fizic).' if lang=='Română' else 'Exhausted employees work at 70–85% capacity. The rest is lost in errors, slowdowns and hidden absenteeism (physically present only).'}</div>"
         f"</div>"
         f"<div style='background:rgba(255,255,255,0.07);border-radius:8px;padding:10px 14px;flex:1;min-width:160px;'>"
-        f"<div style='font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:3px;'>✈️ {'Risc plecare' if lang=='Română' else 'Leaving risk'}</div>"
+        f"<div style='font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:3px;'>✈️ {'Risc plecare' if lang=='Română' else 'Leaving risk'}</div>"
         f"<div style='font-size:18px;font-weight:600;color:#FFA07A;'>{fmt_eur(fi['leaving_min'])}–{fmt_eur(fi['leaving_max'])}</div>"
-        f"<div style='font-size:11px;color:rgba(255,255,255,0.4);margin-top:3px;'>{'Înlocuirea unui angajat costă 6–9 luni de salariu — recrutare, onboarding și timp până la productivitate deplină.' if lang=='Română' else 'Replacing an employee costs 6–9 months salary — recruitment, onboarding and ramp-up time.'}</div>"
+        f"<div style='font-size:13px;color:rgba(255,255,255,0.55);margin-top:3px;'>{'Înlocuirea unui angajat costă 6–9 luni de salariu — recrutare, onboarding și timp până la productivitate deplină.' if lang=='Română' else 'Replacing an employee costs 6–9 months salary — recruitment, onboarding and ramp-up time.'}</div>"
         f"</div>"
         f"<div style='background:rgba(255,255,255,0.07);border-radius:8px;padding:10px 14px;flex:1;min-width:160px;'>"
-        f"<div style='font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:3px;'>🤐 {'Mască politicoasă' if lang=='Română' else 'Polite mask'}</div>"
+        f"<div style='font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:3px;'>🤐 {'Mască politicoasă' if lang=='Română' else 'Polite mask'}</div>"
         f"<div style='font-size:18px;font-weight:600;color:#FFA07A;'>{fmt_eur(fi['mask'])}<span style='font-size:11px;color:rgba(255,255,255,0.4);'>{per_year}</span></div>"
-        f"<div style='font-size:11px;color:rgba(255,255,255,0.4);margin-top:3px;'>{'Oamenii care tac nu propun, nu semnalează probleme la timp și nu contribuie la soluții. Inovația și calitatea deciziilor scad.' if lang=='Română' else 'People who stay silent dont propose, dont flag problems in time and dont contribute to solutions. Innovation and decision quality decline.'}</div>"
+        f"<div style='font-size:13px;color:rgba(255,255,255,0.55);margin-top:3px;'>{'Oamenii care tac nu propun, nu semnalează probleme la timp și nu contribuie la soluții. Inovația și calitatea deciziilor scad.' if lang=='Română' else 'People who stay silent dont propose, dont flag problems in time and dont contribute to solutions. Innovation and decision quality decline.'}</div>"
         f"</div>"
         f"</div>"
-        f"<div style='margin-top:10px;font-size:11px;color:rgba(255,255,255,0.35);'>{note}</div>"
+        f"<div style='margin-top:10px;font-size:13px;color:rgba(255,255,255,0.45);'>{note}</div>"
         f"</div>",
         unsafe_allow_html=True
     )
@@ -806,10 +806,10 @@ def render_landing_page(lang, template_bytes):
             f"<div style='{card_style}'>"
             f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>"
             f"<span style='{num_style}'>1</span>"
-            f"<div><p style='font-size:11px;color:#888;margin:0;'>{'Pasul 1' if lang=='Română' else 'Step 1'}</p>"
+            f"<div><p style='font-size:13px;color:#888;margin:0;'>{'Pasul 1' if lang=='Română' else 'Step 1'}</p>"
             f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Descarcă și completează' if lang=='Română' else 'Download and fill in'}</p></div></div>"
-            f"<p style='font-size:11px;color:#888;margin:0 0 8px;'>{'~15 minute' if lang=='Română' else '~15 minutes'}</p>"
-            f"<p style='font-size:12px;line-height:1.55;opacity:0.75;margin:0 0 1rem;'>{'Descarcă template-ul Excel și completează datele echipei tale urmând instrucțiunile din fișier. Datele sunt cele pe care le știi deja sau pe care le poți afla ușor.' if lang=='Română' else 'Download the Excel template and fill in your team data following the instructions in the file. The data is what you already know or can easily find out.'}"
+            f"<p style='font-size:13px;color:#888;margin:0 0 8px;'>{'~15 minute' if lang=='Română' else '~15 minutes'}</p>"
+            f"<p style='font-size:15px;line-height:1.6;opacity:0.85;margin:0 0 1rem;'>{'Descarcă template-ul Excel și completează datele echipei tale urmând instrucțiunile din fișier. Datele sunt cele pe care le știi deja sau pe care le poți afla ușor.' if lang=='Română' else 'Download the Excel template and fill in your team data following the instructions in the file. The data is what you already know or can easily find out.'}"
             f"</p></div>", unsafe_allow_html=True)
         st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
         if template_bytes:
@@ -826,10 +826,10 @@ def render_landing_page(lang, template_bytes):
             f"<div style='{card_style}'>"
             f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>"
             f"<span style='{num_style}'>2</span>"
-            f"<div><p style='font-size:11px;color:#888;margin:0;'>{'Pasul 2' if lang=='Română' else 'Step 2'}</p>"
+            f"<div><p style='font-size:13px;color:#888;margin:0;'>{'Pasul 2' if lang=='Română' else 'Step 2'}</p>"
             f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Încarcă fișierul completat' if lang=='Română' else 'Upload the completed file'}</p></div></div>"
-            f"<p style='font-size:11px;color:#888;margin:0 0 8px;'>{'30 secunde' if lang=='Română' else '30 seconds'}</p>"
-            f"<p style='font-size:12px;line-height:1.55;opacity:0.75;margin:0 0 1rem;'>{'Încarcă fișierul completat direct în aplicație. Diagnosticul se generează automat.' if lang=='Română' else 'Upload the completed file directly into the application. The diagnostic is generated automatically.'}"
+            f"<p style='font-size:13px;color:#888;margin:0 0 8px;'>{'30 secunde' if lang=='Română' else '30 seconds'}</p>"
+            f"<p style='font-size:15px;line-height:1.6;opacity:0.85;margin:0 0 1rem;'>{'Încarcă fișierul completat direct în aplicație. Diagnosticul se generează automat.' if lang=='Română' else 'Upload the completed file directly into the application. The diagnostic is generated automatically.'}"
             f"</p></div>", unsafe_allow_html=True)
         st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
@@ -841,10 +841,10 @@ def render_landing_page(lang, template_bytes):
             f"<div style='{card_style}'>"
             f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>"
             f"<span style='{num_style}'>3</span>"
-            f"<div><p style='font-size:11px;color:#888;margin:0;'>{'Pasul 3' if lang=='Română' else 'Step 3'}</p>"
+            f"<div><p style='font-size:13px;color:#888;margin:0;'>{'Pasul 3' if lang=='Română' else 'Step 3'}</p>"
             f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Explorează diagnosticul' if lang=='Română' else 'Explore the diagnostic'}</p></div></div>"
-            f"<p style='font-size:11px;color:#888;margin:0 0 8px;'>{'cât vrei' if lang=='Română' else 'as long as you want'}</p>"
-            f"<p style='font-size:12px;line-height:1.55;opacity:0.75;margin:0;'>{'5 tab-uri cu vizualizări clare și recomandări concrete. De la rezumat executiv până la harta relațiilor din echipă.' if lang=='Română' else '5 tabs with clear visualizations and concrete recommendations. From executive summary to the team relationship map.'}"
+            f"<p style='font-size:13px;color:#888;margin:0 0 8px;'>{'cât vrei' if lang=='Română' else 'as long as you want'}</p>"
+            f"<p style='font-size:15px;line-height:1.6;opacity:0.85;margin:0;'>{'5 tab-uri cu vizualizări clare și recomandări concrete. De la rezumat executiv până la harta relațiilor din echipă.' if lang=='Română' else '5 tabs with clear visualizations and concrete recommendations. From executive summary to the team relationship map.'}"
             f"</p></div>", unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
@@ -948,7 +948,7 @@ if uploaded_file:
 
         # Text ghid tab-uri
         tab_guide = (
-            "👇 **Diagnosticul dvs. este gata.** Explorați rezultatele în cele 5 tab-uri de mai jos — dați click pe fiecare pentru detalii."
+            "👇 **Diagnosticul echipei dvs. este gata.** Explorați rezultatele în cele 5 tab-uri de mai jos — dați click pe fiecare pentru detalii."
             if lang == "Română" else
             "👇 **Your diagnostic is ready.** Explore the results in the 5 tabs below — click each one for details."
         )
