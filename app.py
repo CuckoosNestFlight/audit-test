@@ -872,9 +872,17 @@ uploaded_file = render_landing_page(lang, template_bytes)
 
 if uploaded_file:
     try:
-        df_raw = pd.read_excel(uploaded_file, header=None)
+        # Detectăm sheet-ul cu date (cel care contine 'Date' in nume)
+        xl = pd.ExcelFile(uploaded_file)
+        target_sheet = xl.sheet_names[0]
+        for sh in xl.sheet_names:
+            if 'Date' in sh or 'Data' in sh or 'date' in sh.lower():
+                target_sheet = sh
+                break
 
-        # Detectăm rândul de header — căutăm rândul care conține 'Cod' sau 'Nume'
+        df_raw = pd.read_excel(uploaded_file, sheet_name=target_sheet, header=None)
+
+        # Detectăm rândul de header
         header_row = 0
         for i, row in df_raw.iterrows():
             row_vals = [str(v).strip() for v in row.values if pd.notna(v)]
@@ -882,11 +890,13 @@ if uploaded_file:
                 header_row = i
                 break
 
-        df_raw = pd.read_excel(uploaded_file, header=header_row)
-        df_raw.columns = df_raw.columns.str.strip()
+        df_raw = pd.read_excel(uploaded_file, sheet_name=target_sheet, header=header_row)
 
-        # Aplicăm mapping coloane human-readable → tehnice
+        # Curăm coloanele și aplicăm mapping
+        df_raw.columns = [str(c).strip() if pd.notna(c) else '' for c in df_raw.columns]
         df_raw = df_raw.rename(columns=COLUMN_MAP)
+        df_raw = df_raw.loc[:, df_raw.columns != '']
+        df_raw = df_raw.dropna(how='all')
 
         # Validare coloane
         missing = [c for c in REQUIRED_COLUMNS if c not in df_raw.columns]
