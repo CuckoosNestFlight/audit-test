@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -241,15 +242,21 @@ def render_financial_banner(fi, lang, salary_monthly):
     )
 
 
-def render_tab_cost(cost_min, cost_max, label, description, lang):
+def render_tab_cost(cost_min, cost_max, label, description, lang, salary_monthly=1000):
     per_year = "/an" if lang == "Română" else "/year"
     range_txt = f"{fmt_eur(cost_min)}–{fmt_eur(cost_max)}" if cost_min != cost_max else fmt_eur(cost_min)
+    salary_note = (
+        f"Calculat la salariu mediu €{salary_monthly:,.0f}/lună. Ajustați în bara din stânga pentru situația dvs."
+        if lang == "Română" else
+        f"Calculated at avg salary €{salary_monthly:,.0f}/month. Adjust in the left sidebar for your situation."
+    )
     st.markdown(
         f"<div style='background:#FFF8F0;border-left:4px solid #E67E22;border-radius:0 8px 8px 0;"
         f"padding:12px 16px;margin:8px 0;'>"
         f"<div style='font-size:12px;color:#784212;font-weight:600;'>"
         f"💰 {label}: <span style='font-size:16px;'>{range_txt}{per_year}</span></div>"
         f"<div style='font-size:12px;color:#784212;margin-top:4px;'>{description}</div>"
+        f"<div style='font-size:11px;color:#A04000;margin-top:6px;font-style:italic;'>ℹ️ {salary_note}</div>"
         f"</div>",
         unsafe_allow_html=True
     )
@@ -509,7 +516,7 @@ def insight_card(text, level="info"):
     st.markdown(
         f"<div style='background:{bg};border-left:3px solid {border};"
         f"border-radius:0 8px 8px 0;padding:12px 16px;margin:6px 0;"
-        f"font-size:14px;line-height:1.6;color:{tc}'>"
+        f"font-size:16px;line-height:1.7;color:{tc}'>"
         f"<span style='color:{border};margin-right:8px'>{icon}</span>{text}</div>",
         unsafe_allow_html=True
     )
@@ -933,6 +940,20 @@ if uploaded_file:
             f"</div>", unsafe_allow_html=True
         )
 
+        # Auto-scroll la diagnostic după upload
+        st.components.v1.html(
+            "<script>window.parent.document.querySelector('section.main').scrollTo({top: 999999, behavior: 'smooth'});</script>",
+            height=0
+        )
+
+        # Text ghid tab-uri
+        tab_guide = (
+            "👇 **Diagnosticul dvs. este gata.** Explorați rezultatele în cele 5 tab-uri de mai jos — dați click pe fiecare pentru detalii."
+            if lang == "Română" else
+            "👇 **Your diagnostic is ready.** Explore the results in the 5 tabs below — click each one for details."
+        )
+        st.info(tab_guide)
+
         # TABS
         tab_labels = (
             ["🧩 Insights", "🔥 Stres & Burnout", "🤐 Masca Politicoasă", "✈️ Risc Plecare", "🕸️ Rețeaua de Relații"]
@@ -955,7 +976,7 @@ if uploaded_file:
                       "Exhausted employees work at 70–85% capacity. The rest is lost in errors, slowdowns and hidden absenteeism (physically present only).")
             render_tab_cost(fi['burnout'], fi['burnout'],
                             "Pierderi estimate — Burnout" if lang=="Română" else "Estimated losses — Burnout",
-                            b_desc, lang)
+                            b_desc, lang, salary)
 
             df_b = df.sort_values('B_Score', ascending=True)
             colors_b = ['#E74C3C' if s > 70 else '#F39C12' if s > 50 else '#27AE60' for s in df_b['B_Score']]
@@ -999,7 +1020,7 @@ if uploaded_file:
                       "People who stay silent don't propose, don't flag problems in time and don't contribute to solutions. Innovation and decision quality decline.")
             render_tab_cost(fi['mask'], fi['mask'],
                             "Pierderi estimate — Mască politicoasă" if lang=="Română" else "Estimated losses — Polite mask",
-                            m_desc, lang)
+                            m_desc, lang, salary)
 
             st.markdown("---")
             fig_s = px.scatter(df, x="Erori_Asumate", y="Idei_Noi", size="S_Size", color="S_Score",
@@ -1034,7 +1055,7 @@ if uploaded_file:
                       "Replacing an employee costs 6–9 months salary — recruitment, onboarding and ramp-up time.")
             render_tab_cost(fi['leaving_min'], fi['leaving_max'],
                             "Pierderi estimate — Risc plecare" if lang=="Română" else "Estimated losses — Leaving risk",
-                            l_desc, lang)
+                            l_desc, lang, salary)
 
             df_f = df.sort_values('F_Score', ascending=True).copy()
             if salary > 0:
@@ -1071,7 +1092,7 @@ if uploaded_file:
 
         # TAB 5: REȚEAUA DE RELAȚII
         with tab5:
-            st.markdown("**Dimensiunea nodului** = câți colegi te consultă (in-degree) | **Culoarea** = risc burnout" if lang=="Română" else "**Node size** = how many colleagues consult you (in-degree) | **Color** = burnout risk")
+            st.markdown("**Dimensiunea nodului** = câți colegi consultă / solicită acel membru al echipei | **Culoarea** = risc burnout" if lang=="Română" else "**Node size** = how many colleagues consult / reach out to that team member | **Color** = burnout risk")
             st.markdown("**Săgeata** indică direcția consultării: de la cel care întreabă spre cel consultat." if lang=="Română" else "**Arrow** direction: from the person asking toward the person being consulted.")
 
             pos = nx.spring_layout(G, k=1.2, seed=42)
