@@ -905,10 +905,10 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
 
     # Disclaimer proeminent
     disc_text = (
-        "⚠  Concluziile din acest raport sunt extrase din date si reprezinta indicatori de analiza, "
+        "ATENTIE: Concluziile din acest raport sunt extrase din date si reprezinta indicatori de analiza, "
         "nu verdicte. Se recomanda discutii directe cu oamenii si eventual analize suplimentare inainte de orice decizie."
         if lang == "Română" else
-        "⚠  The conclusions in this report are data-driven indicators, not verdicts. "
+        "NOTE: The conclusions in this report are data-driven indicators, not verdicts. "
         "Direct conversations with team members and further analysis are recommended before any decision."
     )
     disc_table = Table([[Paragraph(disc_text, s_disclaimer)]], colWidths=['100%'])
@@ -957,16 +957,16 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
     # 3 carduri financiare
     per_yr = "/an" if lang == "Română" else "/year"
     fin_rows = [
-        ["🔥 Burnout", f"EUR {fi['burnout']:,.0f}{per_yr}",
+        ["[BURNOUT]", f"EUR {fi['burnout']:,.0f}{per_yr}",
          ("Angajatii epuizati lucreaza la 70-85% din capacitate. Restul se pierde in erori, lentoare si absenteism ascuns."
           if lang=="Română" else
           "Exhausted employees work at 70-85% capacity. The rest is lost in errors, slowdowns and hidden absenteeism.")],
-        [f"✈️ {'Risc plecare' if lang=='Română' else 'Leaving risk'}",
+        [f"[PLECARE]",
          f"EUR {fi['leaving_min']:,.0f} - EUR {fi['leaving_max']:,.0f}",
          ("Inlocuirea unui angajat costa 6-9 luni de salariu — recrutare, onboarding si timp pana la productivitate deplina."
           if lang=="Română" else
           "Replacing an employee costs 6-9 months salary — recruitment, onboarding and ramp-up time.")],
-        [f"🤐 {'Masca politicoasa' if lang=='Română' else 'Polite mask'}",
+        [f"[MASCA]",
          f"EUR {fi['mask']:,.0f}{per_yr}",
          ("Oamenii care tac nu propun, nu semnaleaza probleme la timp si nu contribuie la solutii."
           if lang=="Română" else
@@ -1011,11 +1011,11 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
         Paragraph(f"<b>{n_ok}</b>",       ParagraphStyle('sok', fontSize=28, fontName=F_BOLD,
                    textColor=C_GREEN, alignment=TA_CENTER)),
     ],[
-        Paragraph("🔴 Interventie imediata" if lang=="Română" else "🔴 Immediate attention",
+        Paragraph("! Interventie imediata" if lang=="Română" else "! Immediate attention",
                   ParagraphStyle('sl', fontSize=8, fontName=F_NORMAL, textColor=C_RED, alignment=TA_CENTER)),
-        Paragraph("🟡 De urmarit" if lang=="Română" else "🟡 To monitor",
+        Paragraph("- De urmarit" if lang=="Română" else "- To monitor",
                   ParagraphStyle('sl2', fontSize=8, fontName=F_NORMAL, textColor=C_ORANGE, alignment=TA_CENTER)),
-        Paragraph("🟢 In parametri" if lang=="Română" else "🟢 Within range",
+        Paragraph("+ In parametri" if lang=="Română" else "+ Within range",
                   ParagraphStyle('sl3', fontSize=8, fontName=F_NORMAL, textColor=C_GREEN, alignment=TA_CENTER)),
     ]]
     sb_tbl = Table(sb_data, colWidths=[6*cm, 6*cm, 6*cm])
@@ -1070,36 +1070,36 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
     urgent['_max'] = urgent[['B_Score','F_Score']].max(axis=1)
     urgent = urgent.sort_values('_max', ascending=False)
     if not urgent.empty:
-        story.append(Paragraph(f"⚠️ {t_txt['sec_urgent']}", s_h2))
+        story.append(Paragraph(f"! {t_txt['sec_urgent']}", s_h2))
         for _, row in urgent.iterrows():
             ins = generate_individual_insights(row, t_txt, salary)
             story.append(Paragraph(f"<b>{row['Nume']}</b> — Burnout: {row['B_Score']:.0f} | "
                          f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f} | "
                          f"Mask: {row['S_Raw']:.1f}", s_body))
-            story.append(pdf_insight_block(f"🔥 {ins['burnout'][0]}", ins['burnout'][1]))
-            story.append(pdf_insight_block(f"✈️ {ins['leaving'][0]}", ins['leaving'][1]))
-            story.append(pdf_insight_block(f"🤐 {ins['mask'][0]}", ins['mask'][1]))
+            story.append(pdf_insight_block(f"[BURNOUT] {ins['burnout'][0]}", ins['burnout'][1]))
+            story.append(pdf_insight_block(f"[PLECARE] {ins['leaving'][0]}", ins['leaving'][1]))
+            story.append(pdf_insight_block(f"[MASCA] {ins['mask'][0]}", ins['mask'][1]))
             story.append(Spacer(1, 0.2*cm))
 
     # De urmărit
     monitor = df[~((df['B_Score'] > 70) | (df['F_Score'] > 65)) &
                   ((df['B_Score'] > 50) | (df['F_Score'] > 40))].copy()
     if not monitor.empty:
-        story.append(Paragraph(f"👁️ {t_txt['sec_monitor']}", s_h2))
+        story.append(Paragraph(f">> {t_txt['sec_monitor']}", s_h2))
         monitor['_max'] = monitor[['B_Score','F_Score']].max(axis=1)
         monitor = monitor.sort_values('_max', ascending=False)
         for _, row in monitor.iterrows():
             ins = generate_individual_insights(row, t_txt, salary)
             story.append(Paragraph(f"<b>{row['Nume']}</b> — Burnout: {row['B_Score']:.0f} | "
                          f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f}", s_body))
-            story.append(pdf_insight_block(f"🔥 {ins['burnout'][0]}", ins['burnout'][1]))
-            story.append(pdf_insight_block(f"✈️ {ins['leaving'][0]}", ins['leaving'][1]))
+            story.append(pdf_insight_block(f"[BURNOUT] {ins['burnout'][0]}", ins['burnout'][1]))
+            story.append(pdf_insight_block(f"[PLECARE] {ins['leaving'][0]}", ins['leaving'][1]))
             story.append(Spacer(1, 0.15*cm))
 
     # Tipare
     patterns = detect_team_patterns(df, G, t_txt)
     if patterns:
-        story.append(Paragraph(f"🕸️ {t_txt['sec_patterns']}", s_h2))
+        story.append(Paragraph(f"~ {t_txt['sec_patterns']}", s_h2))
         for p in patterns:
             story.append(pdf_insight_block(f"<b>{p['title']}</b> — {p['text']}", p['level']))
             story.append(Spacer(1, 0.1*cm))
@@ -1118,7 +1118,7 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
         all_w3.append(t_txt["action_isolated"].format(name=row['Nume']))
 
     if any([all_w1, all_w2, all_w3]):
-        story.append(Paragraph(f"✅ {t_txt['action_title']}", s_h2))
+        story.append(Paragraph(f"* {t_txt['action_title']}", s_h2))
         if all_w1:
             story.append(Paragraph(f"<b>{t_txt['action_w1']}</b>", s_body))
             for a in all_w1[:3]:
