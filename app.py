@@ -1511,25 +1511,53 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
 
 
 def render_pdf_button(df, G, fi, lang, salary, key_suffix=""):
-    """Render the PDF download button — call inside each tab after upload."""
+    """Render the PDF download button — generates only when clicked."""
     st.markdown("---")
+
+    # Câmpul de echipă/departament — shared prin session_state (același indiferent de tab)
+    if 'pdf_team_name' not in st.session_state:
+        st.session_state['pdf_team_name'] = ""
+
+    label_input = (
+        "Completează numele echipei / departamentului și firmei (opțional)"
+        if lang == "Română" else
+        "Enter team / department and company name (optional)"
+    )
+    placeholder_input = (
+        "Ex: Echipa Vânzări — Compania X"
+        if lang == "Română" else
+        "E.g. Sales Team — Company X"
+    )
     team_name = st.text_input(
-        "Echipa / Departament (opțional)" if lang == "Română" else "Team / Department (optional)",
-        key=f"team_name_{key_suffix}",
-        placeholder="Ex: Echipa Vânzări Q2" if lang == "Română" else "E.g. Sales Team Q2"
+        label_input,
+        value=st.session_state['pdf_team_name'],
+        key=f"team_name_input_{key_suffix}",
+        placeholder=placeholder_input
     )
-    btn_label = "📄 Descarcă raport PDF" if lang == "Română" else "📄 Download PDF report"
-    with st.spinner("Se generează PDF..." if lang == "Română" else "Generating PDF..."):
-        pdf_bytes = generate_pdf_report(df, G, fi, lang, salary, team_name)
-    fname = f"TeamScientist_Diagnostic_{datetime.now().strftime('%Y%m%d')}.pdf"
-    st.download_button(
-        label=btn_label,
-        data=pdf_bytes,
-        file_name=fname,
-        mime="application/pdf",
-        use_container_width=True,
-        key=f"pdf_dl_{key_suffix}"
-    )
+    st.session_state['pdf_team_name'] = team_name
+
+    pdf_key = f"pdf_bytes_{key_suffix}"
+    btn_label = "📄 Generează și descarcă raport PDF" if lang == "Română" else "📄 Generate & download PDF report"
+
+    if st.button(btn_label, key=f"pdf_gen_{key_suffix}", use_container_width=True):
+        try:
+            with st.spinner("Se generează PDF..." if lang == "Română" else "Generating PDF..."):
+                pdf_bytes = generate_pdf_report(df, G, fi, lang, salary, team_name)
+            st.session_state[pdf_key] = pdf_bytes
+        except Exception as e:
+            st.error(f"Eroare la generarea PDF: {e}" if lang == "Română" else f"PDF generation error: {e}")
+            st.session_state[pdf_key] = None
+
+    if st.session_state.get(pdf_key):
+        fname = f"TeamScientist_Diagnostic_{datetime.now().strftime('%Y%m%d')}.pdf"
+        st.download_button(
+            label="⬇️ Descarcă PDF" if lang == "Română" else "⬇️ Download PDF",
+            data=st.session_state[pdf_key],
+            file_name=fname,
+            mime="application/pdf",
+            use_container_width=True,
+            key=f"pdf_dl_{key_suffix}"
+        )
 
 
 def render_landing_page(lang, template_bytes):
