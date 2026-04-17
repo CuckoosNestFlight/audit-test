@@ -792,26 +792,23 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
     import numpy as np
 
     # ── FONTURI UNICODE (suport diacritice) ──────────────────
-    # Caută DejaVuSans în locațiile standard Linux / Streamlit Cloud
-    _font_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/local/lib/python3.12/dist-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf",
-        "/usr/local/lib/python3.12/dist-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf",
-    ]
-    _reg_normal = next((p for p in _font_paths if "Bold" not in p and os.path.exists(p)), None)
-    _reg_bold   = next((p for p in _font_paths if "Bold" in p and os.path.exists(p)), None)
-
-    if _reg_normal and _reg_bold:
-        try:
-            pdfmetrics.registerFont(TTFont('DVSans',     _reg_normal))
-            pdfmetrics.registerFont(TTFont('DVSans-Bold', _reg_bold))
+    # Folosim matplotlib.get_data_path() — funcționează pe orice versiune Python
+    try:
+        _mpl_fonts = os.path.join(matplotlib.get_data_path(), 'fonts', 'ttf')
+        _fn = os.path.join(_mpl_fonts, 'DejaVuSans.ttf')
+        _fb = os.path.join(_mpl_fonts, 'DejaVuSans-Bold.ttf')
+        if not os.path.exists(_fn):
+            _fn = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+            _fb = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+        if os.path.exists(_fn) and os.path.exists(_fb):
+            pdfmetrics.registerFont(TTFont('DVSans',      _fn))
+            pdfmetrics.registerFont(TTFont('DVSans-Bold', _fb))
             F_NORMAL = 'DVSans'
             F_BOLD   = 'DVSans-Bold'
-        except Exception:
+        else:
             F_NORMAL = 'Helvetica'
             F_BOLD   = 'Helvetica-Bold'
-    else:
+    except Exception:
         F_NORMAL = 'Helvetica'
         F_BOLD   = 'Helvetica-Bold'
 
