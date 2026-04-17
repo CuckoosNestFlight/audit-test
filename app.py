@@ -730,10 +730,807 @@ def render_insights_tab(df, G, lang, salary, fi):
         section_header(f"💚 {t['sec_ok']}", "#1E8449")
         insight_card(t["pattern_ok_desc"].format(names=", ".join(stable['Nume'].tolist())), "ok")
 
+    # ── METODOLOGIE ───────────────────────────────────────────
+    st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
+    if lang == "Română":
+        st.markdown(
+            "<div style='border-left:3px solid rgba(128,128,128,0.25);padding:0.75rem 1.1rem;"
+            "background:rgba(128,128,128,0.04);border-radius:0 8px 8px 0;'>"
+            "<p style='font-size:13px;font-weight:600;color:#555;margin:0 0 4px;'>Despre metodologie</p>"
+            "<p style='font-size:12px;line-height:1.7;color:#666;margin:0;'>"
+            "Indicatorii din această diagnoză sunt construiți pe baza unor modele validate în cercetarea organizațională: "
+            "Maslach &amp; Leiter (burnout cronic), Karasek (stres ocupațional), Edmondson (siguranță psihologică), "
+            "Gallup &amp; Google Project Aristotle (engagement și dinamică de echipă), Cross et al. (rețele organizaționale informale).<br><br>"
+            "Datele sunt introduse de manager și reflectă observații directe — nu autopercepție subiectivă a angajaților. "
+            "Scorurile sunt indicatori de direcție, nu măsurători clinice."
+            "</p></div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            "<div style='border-left:3px solid rgba(128,128,128,0.25);padding:0.75rem 1.1rem;"
+            "background:rgba(128,128,128,0.04);border-radius:0 8px 8px 0;'>"
+            "<p style='font-size:13px;font-weight:600;color:#555;margin:0 0 4px;'>About the methodology</p>"
+            "<p style='font-size:12px;line-height:1.7;color:#666;margin:0;'>"
+            "The indicators in this diagnosis are built on models validated in organisational research: "
+            "Maslach &amp; Leiter (chronic burnout), Karasek (occupational stress), Edmondson (psychological safety), "
+            "Gallup &amp; Google Project Aristotle (engagement and team dynamics), Cross et al. (informal organisational networks).<br><br>"
+            "Data is entered by the manager and reflects direct observations — not subjective self-perception of employees. "
+            "Scores are directional indicators, not clinical measurements."
+            "</p></div>",
+            unsafe_allow_html=True
+        )
+
 
 # ════════════════════════════════════════════════════════════
 # LANDING PAGE
 # ════════════════════════════════════════════════════════════
+
+
+# ════════════════════════════════════════════════════════════
+# PDF GENERATION
+# ════════════════════════════════════════════════════════════
+
+def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
+    import io
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import networkx as nx
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+    from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
+                                     PageBreak, Table, TableStyle, Image, HRFlowable)
+    from reportlab.platypus import KeepTogether
+    import numpy as np
+
+    # ── CULORI ───────────────────────────────────────────────
+    C_DARK   = colors.HexColor('#1F3864')
+    C_RED    = colors.HexColor('#E74C3C')
+    C_ORANGE = colors.HexColor('#E67E22')
+    C_GREEN  = colors.HexColor('#27AE60')
+    C_PURPLE = colors.HexColor('#6C3483')
+    C_GRAY   = colors.HexColor('#7F8C8D')
+    C_LIGHT  = colors.HexColor('#F4F6F7')
+    C_BG_RED = colors.HexColor('#FDEDEC')
+    C_BG_YEL = colors.HexColor('#FEF9E7')
+    C_BG_GRN = colors.HexColor('#EAFAF1')
+
+    buf = io.BytesIO()
+    date_str = datetime.now().strftime("%d.%m.%Y")
+
+    # ── HEADER / FOOTER ──────────────────────────────────────
+    def header_footer(canvas, doc):
+        canvas.saveState()
+        w, h = A4
+        # Header line
+        canvas.setStrokeColor(C_DARK)
+        canvas.setLineWidth(0.5)
+        canvas.line(1.5*cm, h - 1.2*cm, w - 1.5*cm, h - 1.2*cm)
+        canvas.setFont('Helvetica-Bold', 8)
+        canvas.setFillColor(C_DARK)
+        canvas.drawString(1.5*cm, h - 1.05*cm, "Team Scientist | Razvan Ghebaur")
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColor(C_GRAY)
+        canvas.drawRightString(w - 1.5*cm, h - 1.05*cm, "linkedin.com/in/razvanghebaur")
+        # Footer line
+        canvas.line(1.5*cm, 1.3*cm, w - 1.5*cm, 1.3*cm)
+        canvas.setFont('Helvetica', 7)
+        canvas.setFillColor(C_GRAY)
+        footer_left = "Generat de Team Scientist — indicatori de directie, nu verdicte." if lang == "Română" else "Generated by Team Scientist — directional indicators, not verdicts."
+        canvas.drawString(1.5*cm, 0.8*cm, footer_left)
+        canvas.drawRightString(w - 1.5*cm, 0.8*cm, f"{doc.page}")
+        canvas.restoreState()
+
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=1.5*cm, rightMargin=1.5*cm,
+        topMargin=1.8*cm, bottomMargin=1.8*cm
+    )
+
+    # ── STILURI ──────────────────────────────────────────────
+    styles = getSampleStyleSheet()
+    s_title   = ParagraphStyle('ts_title',   fontSize=22, fontName='Helvetica-Bold',
+                                textColor=C_DARK, spaceAfter=6, leading=26)
+    s_subtitle= ParagraphStyle('ts_sub',     fontSize=12, fontName='Helvetica',
+                                textColor=C_GRAY, spaceAfter=4, leading=16)
+    s_h1      = ParagraphStyle('ts_h1',      fontSize=14, fontName='Helvetica-Bold',
+                                textColor=C_DARK, spaceBefore=14, spaceAfter=6, leading=18)
+    s_h2      = ParagraphStyle('ts_h2',      fontSize=11, fontName='Helvetica-Bold',
+                                textColor=C_DARK, spaceBefore=8, spaceAfter=4, leading=14)
+    s_body    = ParagraphStyle('ts_body',    fontSize=9,  fontName='Helvetica',
+                                textColor=colors.HexColor('#2C3E50'), leading=14, spaceAfter=4)
+    s_small   = ParagraphStyle('ts_small',   fontSize=8,  fontName='Helvetica',
+                                textColor=C_GRAY, leading=12, spaceAfter=3)
+    s_disclaimer = ParagraphStyle('ts_disc', fontSize=8.5, fontName='Helvetica',
+                                   textColor=colors.HexColor('#784212'), leading=13,
+                                   backColor=colors.HexColor('#FFF8F0'),
+                                   borderColor=colors.HexColor('#E67E22'),
+                                   borderWidth=0, leftIndent=8, rightIndent=8,
+                                   spaceBefore=6, spaceAfter=6)
+    s_method  = ParagraphStyle('ts_method',  fontSize=8,  fontName='Helvetica',
+                                textColor=colors.HexColor('#555555'), leading=13,
+                                leftIndent=6, rightIndent=6, spaceAfter=4)
+
+    story = []
+
+    # ════════════════════════════════════════════════════════
+    # PAG 1 — COPERTĂ
+    # ════════════════════════════════════════════════════════
+    story.append(Spacer(1, 2*cm))
+    cover_title = "Diagnoza de Echipa" if lang == "Română" else "Team Diagnostic"
+    story.append(Paragraph(cover_title, s_title))
+    story.append(Paragraph("Team Scientist", s_subtitle))
+    story.append(Spacer(1, 0.3*cm))
+
+    # Info rând
+    n_members = len(df)
+    cover_info = f"{'Data' if lang=='Română' else 'Date'}: {date_str}  |  {'Membri analizati' if lang=='Română' else 'Members analysed'}: {n_members}"
+    if team_name:
+        cover_info = f"{'Echipa' if lang=='Română' else 'Team'}: {team_name}  |  " + cover_info
+    story.append(Paragraph(cover_info, s_subtitle))
+    story.append(Spacer(1, 0.5*cm))
+    story.append(HRFlowable(width="100%", thickness=1, color=C_DARK))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Disclaimer proeminent
+    disc_text = (
+        "⚠  Concluziile din acest raport sunt extrase din date si reprezinta indicatori de analiza, "
+        "nu verdicte. Se recomanda discutii directe cu oamenii si eventual analize suplimentare inainte de orice decizie."
+        if lang == "Română" else
+        "⚠  The conclusions in this report are data-driven indicators, not verdicts. "
+        "Direct conversations with team members and further analysis are recommended before any decision."
+    )
+    disc_table = Table([[Paragraph(disc_text, s_disclaimer)]], colWidths=['100%'])
+    disc_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FFF8F0')),
+        ('LEFTPADDING',  (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('TOPPADDING',   (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING',(0,0), (-1,-1), 8),
+        ('BOX', (0,0), (-1,-1), 1.5, colors.HexColor('#E67E22')),
+        ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.HexColor('#FFF8F0')]),
+    ]))
+    story.append(disc_table)
+    story.append(PageBreak())
+
+    # ════════════════════════════════════════════════════════
+    # PAG 2 — IMPACT FINANCIAR
+    # ════════════════════════════════════════════════════════
+    fin_title = "Impact Financiar Estimat" if lang == "Română" else "Estimated Financial Impact"
+    story.append(Paragraph(fin_title, s_h1))
+
+    sal_note = (f"Calculat la salariu mediu estimat de EUR {fi['salary_used']:,.0f}/luna."
+                if lang == "Română" else
+                f"Calculated at estimated average salary of EUR {fi['salary_used']:,.0f}/month.")
+    story.append(Paragraph(sal_note, s_small))
+    story.append(Spacer(1, 0.3*cm))
+
+    total_txt = "Total pierderi estimate / an" if lang == "Română" else "Total estimated losses / year"
+    total_val = f"EUR {fi['total_min']:,.0f} - EUR {fi['total_max']:,.0f}"
+    fin_header = [[Paragraph(total_txt, s_small),
+                   Paragraph(f"<b>{total_val}</b>", ParagraphStyle('fh', fontSize=14,
+                   fontName='Helvetica-Bold', textColor=C_RED, leading=18))]]
+    fin_header_tbl = Table(fin_header, colWidths=[9*cm, 9*cm])
+    fin_header_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#1a1a2e')),
+        ('TEXTCOLOR',  (0,0), (-1,-1), colors.white),
+        ('LEFTPADDING',  (0,0), (-1,-1), 12),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
+        ('TOPPADDING',   (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING',(0,0), (-1,-1), 10),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ]))
+    story.append(fin_header_tbl)
+    story.append(Spacer(1, 0.3*cm))
+
+    # 3 carduri financiare
+    per_yr = "/an" if lang == "Română" else "/year"
+    fin_rows = [
+        ["🔥 Burnout", f"EUR {fi['burnout']:,.0f}{per_yr}",
+         ("Angajatii epuizati lucreaza la 70-85% din capacitate. Restul se pierde in erori, lentoare si absenteism ascuns."
+          if lang=="Română" else
+          "Exhausted employees work at 70-85% capacity. The rest is lost in errors, slowdowns and hidden absenteeism.")],
+        [f"✈️ {'Risc plecare' if lang=='Română' else 'Leaving risk'}",
+         f"EUR {fi['leaving_min']:,.0f} - EUR {fi['leaving_max']:,.0f}",
+         ("Inlocuirea unui angajat costa 6-9 luni de salariu — recrutare, onboarding si timp pana la productivitate deplina."
+          if lang=="Română" else
+          "Replacing an employee costs 6-9 months salary — recruitment, onboarding and ramp-up time.")],
+        [f"🤐 {'Masca politicoasa' if lang=='Română' else 'Polite mask'}",
+         f"EUR {fi['mask']:,.0f}{per_yr}",
+         ("Oamenii care tac nu propun, nu semnaleaza probleme la timp si nu contribuie la solutii."
+          if lang=="Română" else
+          "People who stay silent don't propose, don't flag problems in time and don't contribute to solutions.")],
+    ]
+    for lbl, val, desc in fin_rows:
+        row_data = [[Paragraph(f"<b>{lbl}</b>", s_body),
+                     Paragraph(f"<b>{val}</b>", ParagraphStyle('fv', fontSize=11,
+                     fontName='Helvetica-Bold', textColor=C_ORANGE, leading=14)),
+                     Paragraph(desc, s_small)]]
+        t_fin = Table(row_data, colWidths=[4*cm, 4.5*cm, 9.5*cm])
+        t_fin.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8F9FA')),
+            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#DEE2E6')),
+            ('LEFTPADDING',  (0,0), (-1,-1), 8),
+            ('RIGHTPADDING', (0,0), (-1,-1), 8),
+            ('TOPPADDING',   (0,0), (-1,-1), 7),
+            ('BOTTOMPADDING',(0,0), (-1,-1), 7),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ]))
+        story.append(t_fin)
+        story.append(Spacer(1, 0.15*cm))
+    story.append(PageBreak())
+
+    # ════════════════════════════════════════════════════════
+    # PAG 3 — REZUMAT EXECUTIV & ACȚIUNI
+    # ════════════════════════════════════════════════════════
+    t_txt = TEXTS[lang]
+    sum_title = "Rezumat Executiv si Actiuni Recomandate" if lang == "Română" else "Executive Summary & Recommended Actions"
+    story.append(Paragraph(sum_title, s_h1))
+
+    n_critical = int(((df['B_Score'] > 70) | (df['F_Score'] > 65)).sum())
+    n_warning  = int(((df['B_Score'].between(50,70)) | (df['F_Score'].between(40,65))).sum())
+    n_ok       = len(df) - n_critical - n_warning
+
+    # Scoreboard 3 coloane
+    sb_data = [[
+        Paragraph(f"<b>{n_critical}</b>", ParagraphStyle('sc', fontSize=28, fontName='Helvetica-Bold',
+                   textColor=C_RED, alignment=TA_CENTER)),
+        Paragraph(f"<b>{n_warning}</b>",  ParagraphStyle('sw', fontSize=28, fontName='Helvetica-Bold',
+                   textColor=C_ORANGE, alignment=TA_CENTER)),
+        Paragraph(f"<b>{n_ok}</b>",       ParagraphStyle('sok', fontSize=28, fontName='Helvetica-Bold',
+                   textColor=C_GREEN, alignment=TA_CENTER)),
+    ],[
+        Paragraph("🔴 Interventie imediata" if lang=="Română" else "🔴 Immediate attention",
+                  ParagraphStyle('sl', fontSize=8, fontName='Helvetica', textColor=C_RED, alignment=TA_CENTER)),
+        Paragraph("🟡 De urmarit" if lang=="Română" else "🟡 To monitor",
+                  ParagraphStyle('sl2', fontSize=8, fontName='Helvetica', textColor=C_ORANGE, alignment=TA_CENTER)),
+        Paragraph("🟢 In parametri" if lang=="Română" else "🟢 Within range",
+                  ParagraphStyle('sl3', fontSize=8, fontName='Helvetica', textColor=C_GREEN, alignment=TA_CENTER)),
+    ]]
+    sb_tbl = Table(sb_data, colWidths=[6*cm, 6*cm, 6*cm])
+    sb_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#FDEDEC')),
+        ('BACKGROUND', (1,0), (1,-1), colors.HexColor('#FEF9E7')),
+        ('BACKGROUND', (2,0), (2,-1), colors.HexColor('#EAFAF1')),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING',   (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING',(0,0), (-1,-1), 10),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#DEE2E6')),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#DEE2E6')),
+    ]))
+    story.append(sb_tbl)
+    story.append(Spacer(1, 0.4*cm))
+
+    # Insights individuale
+    def pdf_level_color(level):
+        return {
+            "critical": colors.HexColor('#FDEDEC'),
+            "warning":  colors.HexColor('#FEF9E7'),
+            "ok":       colors.HexColor('#EAFAF1'),
+            "info":     colors.HexColor('#EBF5FB'),
+        }.get(level, colors.HexColor('#F4F6F7'))
+
+    def pdf_level_border(level):
+        return {
+            "critical": C_RED,
+            "warning":  C_ORANGE,
+            "ok":       C_GREEN,
+            "info":     colors.HexColor('#2471A3'),
+        }.get(level, C_GRAY)
+
+    def pdf_insight_block(text, level):
+        bg  = pdf_level_color(level)
+        brd = pdf_level_border(level)
+        tbl = Table([[Paragraph(text, ParagraphStyle('pi', fontSize=8.5, fontName='Helvetica',
+                     textColor=colors.HexColor('#2C3E50'), leading=13))]], colWidths=['100%'])
+        tbl.setStyle(TableStyle([
+            ('BACKGROUND',   (0,0), (-1,-1), bg),
+            ('LEFTPADDING',  (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 8),
+            ('TOPPADDING',   (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING',(0,0), (-1,-1), 6),
+            ('LINEBEFORE',   (0,0), (0,-1), 3, brd),
+        ]))
+        return tbl
+
+    # Situații urgente
+    urgent = df[(df['B_Score'] > 70) | (df['F_Score'] > 65)].copy()
+    urgent['_max'] = urgent[['B_Score','F_Score']].max(axis=1)
+    urgent = urgent.sort_values('_max', ascending=False)
+    if not urgent.empty:
+        story.append(Paragraph(f"⚠️ {t_txt['sec_urgent']}", s_h2))
+        for _, row in urgent.iterrows():
+            ins = generate_individual_insights(row, t_txt, salary)
+            story.append(Paragraph(f"<b>{row['Nume']}</b> — Burnout: {row['B_Score']:.0f} | "
+                         f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f} | "
+                         f"Mask: {row['S_Raw']:.1f}", s_body))
+            story.append(pdf_insight_block(f"🔥 {ins['burnout'][0]}", ins['burnout'][1]))
+            story.append(pdf_insight_block(f"✈️ {ins['leaving'][0]}", ins['leaving'][1]))
+            story.append(pdf_insight_block(f"🤐 {ins['mask'][0]}", ins['mask'][1]))
+            story.append(Spacer(1, 0.2*cm))
+
+    # De urmărit
+    monitor = df[~((df['B_Score'] > 70) | (df['F_Score'] > 65)) &
+                  ((df['B_Score'] > 50) | (df['F_Score'] > 40))].copy()
+    if not monitor.empty:
+        story.append(Paragraph(f"👁️ {t_txt['sec_monitor']}", s_h2))
+        monitor['_max'] = monitor[['B_Score','F_Score']].max(axis=1)
+        monitor = monitor.sort_values('_max', ascending=False)
+        for _, row in monitor.iterrows():
+            ins = generate_individual_insights(row, t_txt, salary)
+            story.append(Paragraph(f"<b>{row['Nume']}</b> — Burnout: {row['B_Score']:.0f} | "
+                         f"{'Risc Plecare' if lang=='Română' else 'Leaving Risk'}: {row['F_Score']:.0f}", s_body))
+            story.append(pdf_insight_block(f"🔥 {ins['burnout'][0]}", ins['burnout'][1]))
+            story.append(pdf_insight_block(f"✈️ {ins['leaving'][0]}", ins['leaving'][1]))
+            story.append(Spacer(1, 0.15*cm))
+
+    # Tipare
+    patterns = detect_team_patterns(df, G, t_txt)
+    if patterns:
+        story.append(Paragraph(f"🕸️ {t_txt['sec_patterns']}", s_h2))
+        for p in patterns:
+            story.append(pdf_insight_block(f"<b>{p['title']}</b> — {p['text']}", p['level']))
+            story.append(Spacer(1, 0.1*cm))
+
+    # Acțiuni
+    all_w1, all_w2, all_w3 = [], [], []
+    for _, row in df.iterrows():
+        ins = generate_individual_insights(row, t_txt, salary)
+        all_w1.extend(ins["actions_w1"])
+        all_w2.extend(ins["actions_w2"])
+        all_w3.extend(ins["actions_w3"])
+    hubs_df = df[df['ONA_InDegree'] >= 3].sort_values('ONA_InDegree', ascending=False)
+    if not hubs_df.empty:
+        all_w1.append(t_txt["action_hub"].format(name=hubs_df.iloc[0]['Nume']))
+    for _, row in df[(df['ONA_Conn'] <= 1) & (df['S_Raw'] < 3)].iterrows():
+        all_w3.append(t_txt["action_isolated"].format(name=row['Nume']))
+
+    if any([all_w1, all_w2, all_w3]):
+        story.append(Paragraph(f"✅ {t_txt['action_title']}", s_h2))
+        if all_w1:
+            story.append(Paragraph(f"<b>{t_txt['action_w1']}</b>", s_body))
+            for a in all_w1[:3]:
+                story.append(pdf_insight_block(a, "critical"))
+        if all_w2:
+            story.append(Paragraph(f"<b>{t_txt['action_w2']}</b>", s_body))
+            for a in all_w2[:3]:
+                story.append(pdf_insight_block(a, "warning"))
+        if all_w3:
+            story.append(Paragraph(f"<b>{t_txt['action_w3']}</b>", s_body))
+            for a in all_w3[:3]:
+                story.append(pdf_insight_block(a, "ok"))
+
+    # Metodologie
+    story.append(Spacer(1, 0.5*cm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=C_GRAY))
+    story.append(Spacer(1, 0.2*cm))
+    method_title = "Despre metodologie" if lang == "Română" else "About the methodology"
+    story.append(Paragraph(method_title, ParagraphStyle('mt', fontSize=9, fontName='Helvetica-Bold',
+                 textColor=C_GRAY, spaceAfter=3)))
+    method_text = (
+        "Indicatorii din aceasta diagnoza sunt construiti pe baza unor modele validate in cercetarea organizationala: "
+        "Maslach & Leiter (burnout cronic), Karasek (stres ocupational), Edmondson (siguranta psihologica), "
+        "Gallup & Google Project Aristotle (engagement si dinamica de echipa), Cross et al. (retele organizationale informale). "
+        "Datele sunt introduse de manager si reflecta observatii directe — nu autopercepție subiectiva a angajatilor. "
+        "Scorurile sunt indicatori de directie, nu masuratori clinice."
+        if lang == "Română" else
+        "The indicators in this diagnosis are built on models validated in organisational research: "
+        "Maslach & Leiter (chronic burnout), Karasek (occupational stress), Edmondson (psychological safety), "
+        "Gallup & Google Project Aristotle (engagement and team dynamics), Cross et al. (informal organisational networks). "
+        "Data is entered by the manager and reflects direct observations — not subjective self-perception of employees. "
+        "Scores are directional indicators, not clinical measurements."
+    )
+    story.append(Paragraph(method_text, s_method))
+    story.append(PageBreak())
+
+    # ════════════════════════════════════════════════════════
+    # HELPER: matplotlib bar chart → image bytes
+    # ════════════════════════════════════════════════════════
+    def make_bar_chart(names, scores, colors_list, xlabel, threshold_high, threshold_med,
+                       color_high, color_med, color_ok, legend_high, legend_med, legend_ok):
+        fig, ax = plt.subplots(figsize=(10, max(4, len(names)*0.45)))
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
+        bars = ax.barh(names, scores, color=colors_list, edgecolor='white', height=0.6)
+        ax.set_xlim(0, 115)
+        ax.set_xlabel(xlabel, fontsize=9)
+        ax.axvline(x=threshold_high, color=color_high, linestyle='--', linewidth=0.8, alpha=0.6)
+        ax.axvline(x=threshold_med,  color=color_med,  linestyle='--', linewidth=0.8, alpha=0.5)
+        for bar, score in zip(bars, scores):
+            ax.text(score + 1.5, bar.get_y() + bar.get_height()/2,
+                    f'{score:.1f}', va='center', fontsize=8)
+        legend_patches = [
+            mpatches.Patch(color=color_high, label=legend_high),
+            mpatches.Patch(color=color_med,  label=legend_med),
+            mpatches.Patch(color=color_ok,   label=legend_ok),
+        ]
+        ax.legend(handles=legend_patches, loc='lower right', fontsize=8, framealpha=0.8)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.tick_params(axis='y', labelsize=8)
+        ax.tick_params(axis='x', labelsize=8)
+        plt.tight_layout()
+        img_buf = io.BytesIO()
+        fig.savefig(img_buf, format='png', dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        img_buf.seek(0)
+        return img_buf
+
+    # ════════════════════════════════════════════════════════
+    # PAG 4 — STRES & BURNOUT
+    # ════════════════════════════════════════════════════════
+    burnout_title = "Stres si Burnout" if lang == "Română" else "Stress & Burnout"
+    story.append(Paragraph(burnout_title, s_h1))
+
+    legend_desc_b = (
+        "Scor 0-100. Rosu (>70) = risc ridicat | Galben (50-70) = atentie | Verde (<50) = in parametri\n"
+        "Angajatii epuizati lucreaza la 70-85% din capacitate. Restul se pierde in erori, lentoare si absenteism ascuns."
+        if lang == "Română" else
+        "Score 0-100. Red (>70) = elevated risk | Yellow (50-70) = warning | Green (<50) = within range\n"
+        "Exhausted employees work at 70-85% capacity. The rest is lost in errors, slowdowns and hidden absenteeism."
+    )
+    story.append(Paragraph(legend_desc_b, s_small))
+    story.append(Spacer(1, 0.2*cm))
+
+    df_b = df.sort_values('B_Score', ascending=True)
+    colors_b = ['#E74C3C' if s > 70 else '#F39C12' if s > 50 else '#27AE60' for s in df_b['B_Score']]
+    b_img = make_bar_chart(
+        df_b['Nume'].tolist(), df_b['B_Score'].tolist(), colors_b,
+        "Burnout Score (0-100)", 70, 50,
+        '#E74C3C', '#F39C12', '#27AE60',
+        ">70 Risc ridicat" if lang=="Română" else ">70 Elevated risk",
+        "50-70 Atentie" if lang=="Română" else "50-70 Warning",
+        "<50 In parametri" if lang=="Română" else "<50 Within range"
+    )
+    chart_h = max(5*cm, len(df)*1.1*cm)
+    story.append(Image(b_img, width=17*cm, height=min(chart_h, 16*cm)))
+    story.append(Spacer(1, 0.2*cm))
+
+    cost_b_txt = (f"Pierderi estimate burnout: EUR {fi['burnout']:,.0f}/an "
+                  f"({fi['n_burnout_high']} angajat(i) risc ridicat, {fi['n_burnout_med']} atentie)"
+                  if lang == "Română" else
+                  f"Estimated burnout losses: EUR {fi['burnout']:,.0f}/year "
+                  f"({fi['n_burnout_high']} employee(s) high risk, {fi['n_burnout_med']} warning)")
+    story.append(Paragraph(cost_b_txt, s_small))
+    story.append(PageBreak())
+
+    # ════════════════════════════════════════════════════════
+    # PAG 5 — MASCA POLITICOASĂ
+    # ════════════════════════════════════════════════════════
+    mask_title = "Masca Politicoasa — Siguranta Psihologica" if lang == "Română" else "Polite Mask — Psychological Safety"
+    story.append(Paragraph(mask_title, s_h1))
+
+    mask_legend = (
+        "Axa X: cat de des recunoaste greseli in fata echipei (1=deloc, 5=deschis). "
+        "Axa Y: cat de des propune idei noi (1=rar, 5=frecvent). "
+        "Marimea punctului: proportionala cu riscul de masca. "
+        "Culoarea: intensitatea riscului (portocaliu inchis = risc ridicat).\n"
+        "Cadrane: Stanga-sus = Creativ/Defensiv | Dreapta-sus = Autentic & Sigur | "
+        "Stanga-jos = Tacere Critica | Dreapta-jos = Se simte sigur, e tacut(a)."
+        if lang == "Română" else
+        "X axis: how often they acknowledge mistakes (1=never, 5=openly). "
+        "Y axis: how often they propose new ideas (1=rarely, 5=frequently). "
+        "Dot size: proportional to mask risk. "
+        "Color: risk intensity (dark orange = high risk).\n"
+        "Quadrants: Top-left = Creative/Defensive | Top-right = Authentic & Safe | "
+        "Bottom-left = Critical Silence | Bottom-right = Safe but Silent."
+    )
+    story.append(Paragraph(mask_legend, s_small))
+    story.append(Spacer(1, 0.2*cm))
+
+    # Scatter chart matplotlib
+    fig_s, ax_s = plt.subplots(figsize=(9, 7))
+    fig_s.patch.set_facecolor('white')
+    ax_s.set_facecolor('white')
+    sizes_s  = (df['S_Score'] / 10 + 5) * 20
+    colors_s = df['S_Score'].values
+    sc = ax_s.scatter(df['Erori_Asumate'], df['Idei_Noi'],
+                      s=sizes_s, c=colors_s, cmap='Oranges',
+                      vmin=0, vmax=100, alpha=0.85, edgecolors='white', linewidths=0.5)
+    plt.colorbar(sc, ax=ax_s, label="Mask risk (%)", shrink=0.7)
+    ax_s.axvline(x=3, color='gray', linestyle=':', linewidth=0.8, alpha=0.5)
+    ax_s.axhline(y=3, color='gray', linestyle=':', linewidth=0.8, alpha=0.5)
+    for _, row in df.iterrows():
+        ax_s.annotate(row['Nume'], (row['Erori_Asumate'], row['Idei_Noi']),
+                      fontsize=7, ha='center', va='bottom',
+                      xytext=(0, 5), textcoords='offset points')
+    # Etichete cadrane
+    q_labels = (["Creativ/Defensiv","Autentic & Sigur","Tacere Critica","Se simte sigur, e tacut(a)"]
+                 if lang=="Română" else
+                 ["Creative/Defensive","Authentic & Safe","Critical Silence","Safe but Silent"])
+    q_colors = ['#666','#2E8B57','#C0392B','#B8860B']
+    q_pos    = [(1.5,4.6),(4.1,4.6),(1.5,1.2),(4.1,1.2)]
+    for (x,y), lbl, col in zip(q_pos, q_labels, q_colors):
+        ax_s.text(x, y, lbl, fontsize=7.5, color=col, ha='center',
+                  fontstyle='italic', fontweight='bold')
+    ax_s.set_xlim(1,5); ax_s.set_ylim(1,5)
+    ax_s.set_xlabel("Asumare erori (1-5)" if lang=="Română" else "Error acknowledgment (1-5)", fontsize=9)
+    ax_s.set_ylabel("Propunere idei (1-5)" if lang=="Română" else "Idea proposals (1-5)", fontsize=9)
+    ax_s.spines['top'].set_visible(False)
+    ax_s.spines['right'].set_visible(False)
+    ax_s.tick_params(labelsize=8)
+    plt.tight_layout()
+    img_s = io.BytesIO()
+    fig_s.savefig(img_s, format='png', dpi=150, bbox_inches='tight')
+    plt.close(fig_s)
+    img_s.seek(0)
+    story.append(Image(img_s, width=14*cm, height=11*cm))
+
+    cost_m_txt = (f"Pierderi estimate masca politicoasa: EUR {fi['mask']:,.0f}/an ({fi['n_mask']} angajat(i) cu scor sub 3)"
+                  if lang=="Română" else
+                  f"Estimated polite mask losses: EUR {fi['mask']:,.0f}/year ({fi['n_mask']} employee(s) scoring below 3)")
+    story.append(Paragraph(cost_m_txt, s_small))
+    story.append(PageBreak())
+
+    # ════════════════════════════════════════════════════════
+    # PAG 6 — RISC PLECARE
+    # ════════════════════════════════════════════════════════
+    leaving_title = "Risc de Plecare" if lang == "Română" else "Leaving Risk"
+    story.append(Paragraph(leaving_title, s_h1))
+
+    legend_desc_f = (
+        "Scor 0-100. Rosu (>65) = risc ridicat | Galben (40-65) = monitorizare | Verde (<40) = in parametri\n"
+        "Inlocuirea unui angajat costa 6-9 luni de salariu — recrutare, onboarding si timp pana la productivitate deplina."
+        if lang == "Română" else
+        "Score 0-100. Red (>65) = elevated risk | Yellow (40-65) = monitor | Green (<40) = within range\n"
+        "Replacing an employee costs 6-9 months salary — recruitment, onboarding and ramp-up time."
+    )
+    story.append(Paragraph(legend_desc_f, s_small))
+    story.append(Spacer(1, 0.2*cm))
+
+    df_f = df.sort_values('F_Score', ascending=True)
+    colors_f = ['#E74C3C' if s > 65 else '#F39C12' if s > 40 else '#27AE60' for s in df_f['F_Score']]
+    f_img = make_bar_chart(
+        df_f['Nume'].tolist(), df_f['F_Score'].tolist(), colors_f,
+        "Leaving Risk Score (0-100)", 65, 40,
+        '#E74C3C', '#F39C12', '#27AE60',
+        ">65 Risc ridicat" if lang=="Română" else ">65 Elevated risk",
+        "40-65 Monitorizare" if lang=="Română" else "40-65 Monitor",
+        "<40 In parametri" if lang=="Română" else "<40 Within range"
+    )
+    story.append(Image(f_img, width=17*cm, height=min(chart_h, 16*cm)))
+    story.append(Spacer(1, 0.2*cm))
+
+    # Tabel risc ridicat
+    high_risk = df_f[df_f['F_Score'] > 65][['Nume','F_Score','Ultima_Marire','Scor_Energie']].sort_values('F_Score', ascending=False)
+    if not high_risk.empty and salary > 0:
+        story.append(Paragraph("Cost estimat inlocuire — membri cu risc ridicat" if lang=="Română" else "Estimated replacement cost — high-risk members", s_h2))
+        hr_header = [
+            Paragraph("Cod" if lang=="Română" else "Code", s_small),
+            Paragraph("Scor risc" if lang=="Română" else "Risk score", s_small),
+            Paragraph("Ultima marire (luni)" if lang=="Română" else "Last raise (months)", s_small),
+            Paragraph("Energie" if lang=="Română" else "Energy", s_small),
+            Paragraph("Cost estimat" if lang=="Română" else "Est. cost", s_small),
+        ]
+        hr_rows = [hr_header]
+        for _, row in high_risk.iterrows():
+            hr_rows.append([
+                Paragraph(str(row['Nume']), s_body),
+                Paragraph(f"{row['F_Score']:.1f}", s_body),
+                Paragraph(f"{int(row['Ultima_Marire'])}", s_body),
+                Paragraph(f"{int(row['Scor_Energie'])}/5", s_body),
+                Paragraph(f"EUR {salary*6:,.0f}-EUR {salary*9:,.0f}", s_body),
+            ])
+        hr_tbl = Table(hr_rows, colWidths=[4*cm, 2.5*cm, 3.5*cm, 2*cm, 5*cm])
+        hr_tbl.setStyle(TableStyle([
+            ('BACKGROUND',   (0,0), (-1,0), C_DARK),
+            ('TEXTCOLOR',    (0,0), (-1,0), colors.white),
+            ('BACKGROUND',   (0,1), (-1,-1), colors.HexColor('#FDEDEC')),
+            ('ROWBACKGROUNDS',(0,1), (-1,-1), [colors.HexColor('#FDEDEC'), colors.HexColor('#FEF5F5')]),
+            ('GRID', (0,0), (-1,-1), 0.4, colors.HexColor('#CCCCCC')),
+            ('LEFTPADDING',  (0,0), (-1,-1), 6),
+            ('RIGHTPADDING', (0,0), (-1,-1), 6),
+            ('TOPPADDING',   (0,0), (-1,-1), 5),
+            ('BOTTOMPADDING',(0,0), (-1,-1), 5),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+        ]))
+        story.append(hr_tbl)
+
+    cost_f_txt = (f"Pierderi estimate risc plecare: EUR {fi['leaving_min']:,.0f}-EUR {fi['leaving_max']:,.0f} ({fi['n_leaving']} angajat(i) cu risc ridicat)"
+                  if lang=="Română" else
+                  f"Estimated leaving risk losses: EUR {fi['leaving_min']:,.0f}-EUR {fi['leaving_max']:,.0f} ({fi['n_leaving']} employee(s) at high risk)")
+    story.append(Paragraph(cost_f_txt, s_small))
+    story.append(PageBreak())
+
+    # ════════════════════════════════════════════════════════
+    # PAG 7 — REȚEAUA DE RELAȚII
+    # ════════════════════════════════════════════════════════
+    ona_title = "Reteaua Informala de Relatii" if lang == "Română" else "Informal Relationship Network"
+    story.append(Paragraph(ona_title, s_h1))
+
+    ona_legend = (
+        "Dimensiunea nodului = cati colegi consulta / solicita acel membru al echipei (cu cat e mai mare, cu atat e mai consultat). "
+        "Culoarea nodului = risc burnout (verde = scazut, rosu = ridicat). "
+        "Sageata indica directia consultarii: de la cel care intreaba spre cel consultat.\n"
+        "Noduri izolate (fara conexiuni sau cu putine) = posibil dezangajare sau excludere informala."
+        if lang == "Română" else
+        "Node size = how many colleagues consult / reach out to that team member (larger = more consulted). "
+        "Node color = burnout risk (green = low, red = high). "
+        "Arrow indicates consultation direction: from the person asking toward the person consulted.\n"
+        "Isolated nodes (no or few connections) = possible disengagement or informal exclusion."
+    )
+    story.append(Paragraph(ona_legend, s_small))
+    story.append(Spacer(1, 0.3*cm))
+
+    # Graf matplotlib
+    pos = nx.spring_layout(G, k=1.2, seed=42)
+    fig_n, ax_n = plt.subplots(figsize=(11, 9))
+    fig_n.patch.set_facecolor('white')
+    ax_n.set_facecolor('white')
+
+    nx_nodes = list(G.nodes())
+    b_vals   = [G.nodes[n].get('B', 0) for n in nx_nodes]
+    sizes_n  = [(G.in_degree(n)*300)+200 for n in nx_nodes]
+
+    import matplotlib.cm as cm_mpl
+    cmap  = plt.get_cmap('RdYlGn_r')
+    norm  = plt.Normalize(vmin=0, vmax=100)
+    node_colors = [cmap(norm(b)) for b in b_vals]
+
+    # Muchii cu săgeți
+    for e in G.edges():
+        x0, y0 = pos[e[0]]
+        x1, y1 = pos[e[1]]
+        ax_n.annotate("", xy=(x1,y1), xytext=(x0,y0),
+                      arrowprops=dict(arrowstyle="-|>", color='gray',
+                                      lw=0.8, alpha=0.5, mutation_scale=12))
+
+    sc_n = ax_n.scatter([pos[n][0] for n in nx_nodes],
+                         [pos[n][1] for n in nx_nodes],
+                         s=sizes_n, c=b_vals, cmap='RdYlGn_r',
+                         vmin=0, vmax=100, alpha=0.9,
+                         edgecolors='white', linewidths=1.5, zorder=3)
+    plt.colorbar(sc_n, ax=ax_n, label="Burnout risk (0-100)", shrink=0.6)
+
+    for n in nx_nodes:
+        x, y = pos[n]
+        ax_n.text(x, y - 0.08, n, fontsize=8, ha='center', va='top',
+                  fontweight='bold', color='#1F3864')
+
+    ax_n.set_xticks([]); ax_n.set_yticks([])
+    ax_n.spines['top'].set_visible(False)
+    ax_n.spines['right'].set_visible(False)
+    ax_n.spines['left'].set_visible(False)
+    ax_n.spines['bottom'].set_visible(False)
+
+    # Legenda dimensiune noduri
+    legend_size = [
+        plt.scatter([],[], s=200, c='gray', alpha=0.6, label="0 colegi" if lang=="Română" else "0 colleagues"),
+        plt.scatter([],[], s=500, c='gray', alpha=0.6, label="1 coleg" if lang=="Română" else "1 colleague"),
+        plt.scatter([],[], s=800, c='gray', alpha=0.6, label="2+ colegi" if lang=="Română" else "2+ colleagues"),
+    ]
+    ax_n.legend(handles=legend_size, title="Consultat de:" if lang=="Română" else "Consulted by:",
+                loc='lower left', fontsize=7, title_fontsize=7, framealpha=0.8)
+
+    plt.tight_layout()
+    img_n = io.BytesIO()
+    fig_n.savefig(img_n, format='png', dpi=150, bbox_inches='tight')
+    plt.close(fig_n)
+    img_n.seek(0)
+    story.append(Image(img_n, width=16*cm, height=13*cm))
+
+    # Identificare hubs și izolați
+    hubs_pdf = df[df['ONA_InDegree'] >= 3].sort_values('ONA_InDegree', ascending=False)
+    if not hubs_pdf.empty:
+        hub_names = ", ".join([f"{r['Nume']} ({int(r['ONA_InDegree'])} colegi)" for _, r in hubs_pdf.iterrows()])
+        hub_txt = (f"Persoane-cheie (hub-uri): {hub_names}"
+                   if lang=="Română" else f"Key people (hubs): {hub_names}")
+        story.append(Paragraph(hub_txt, s_small))
+
+    isolated_pdf = df[df['ONA_Conn'] <= 1]
+    if not isolated_pdf.empty:
+        iso_names = ", ".join(isolated_pdf['Nume'].tolist())
+        iso_txt = (f"Noduri izolate (putine conexiuni): {iso_names} — de inclus in decizii de echipa."
+                   if lang=="Română" else
+                   f"Isolated nodes (few connections): {iso_names} — include in team decisions.")
+        story.append(Paragraph(iso_txt, s_small))
+
+    story.append(PageBreak())
+
+    # ════════════════════════════════════════════════════════
+    # PAG 8 — ANEXĂ: DATE INDIVIDUALE
+    # ════════════════════════════════════════════════════════
+    annex_title = "Anexa — Scoruri Individuale" if lang == "Română" else "Annex — Individual Scores"
+    story.append(Paragraph(annex_title, s_h1))
+    annex_desc = (
+        "Tabel complet cu indicatorii calculati pentru fiecare membru al echipei. "
+        "B = Burnout (0-100), F = Risc Plecare (0-100), Mask = Siguranta Psihologica (1-5), "
+        "Hub = consultat de X colegi."
+        if lang == "Română" else
+        "Full table with calculated indicators for each team member. "
+        "B = Burnout (0-100), F = Leaving Risk (0-100), Mask = Psychological Safety (1-5), "
+        "Hub = consulted by X colleagues."
+    )
+    story.append(Paragraph(annex_desc, s_small))
+    story.append(Spacer(1, 0.3*cm))
+
+    ann_cols = ['Cod' if lang=='Română' else 'Code', 'B Score', 'F Score', 'Mask (1-5)',
+                'Hub', 'Ore/sapt' if lang=='Română' else 'Hours/wk',
+                'Zile conc.' if lang=='Română' else 'Vac. days', 'Energie' if lang=='Română' else 'Energy']
+    ann_header = [Paragraph(c, ParagraphStyle('ah', fontSize=7.5, fontName='Helvetica-Bold',
+                 textColor=colors.white)) for c in ann_cols]
+    ann_rows = [ann_header]
+    df_ann = df.sort_values('B_Score', ascending=False)
+    for _, row in df_ann.iterrows():
+        b_color = colors.HexColor('#FDEDEC') if row['B_Score'] > 70 else \
+                  colors.HexColor('#FEF9E7') if row['B_Score'] > 50 else \
+                  colors.HexColor('#EAFAF1')
+        ann_rows.append([
+            Paragraph(str(row['Nume']), ParagraphStyle('ac', fontSize=8, fontName='Helvetica')),
+            Paragraph(f"{row['B_Score']:.1f}", ParagraphStyle('ac', fontSize=8, fontName='Helvetica-Bold',
+                     textColor=C_RED if row['B_Score']>70 else C_ORANGE if row['B_Score']>50 else C_GREEN)),
+            Paragraph(f"{row['F_Score']:.1f}", ParagraphStyle('ac', fontSize=8, fontName='Helvetica-Bold',
+                     textColor=C_RED if row['F_Score']>65 else C_ORANGE if row['F_Score']>40 else C_GREEN)),
+            Paragraph(f"{row['S_Raw']:.1f}", ParagraphStyle('ac', fontSize=8, fontName='Helvetica',
+                     textColor=C_RED if row['S_Raw']<3 else colors.HexColor('#2C3E50'))),
+            Paragraph(str(int(row['ONA_InDegree'])),
+                      ParagraphStyle('ac', fontSize=8, fontName='Helvetica',
+                     textColor=C_ORANGE if row['ONA_InDegree']>=3 else colors.HexColor('#2C3E50'))),
+            Paragraph(str(int(row['Ore_Saptamana'])), ParagraphStyle('ac', fontSize=8, fontName='Helvetica')),
+            Paragraph(str(int(row['Zile_Concediu'])), ParagraphStyle('ac', fontSize=8, fontName='Helvetica')),
+            Paragraph(f"{int(row['Scor_Energie'])}/5", ParagraphStyle('ac', fontSize=8, fontName='Helvetica')),
+        ])
+    ann_tbl = Table(ann_rows, colWidths=[4*cm, 1.8*cm, 1.8*cm, 2*cm, 1.5*cm, 2*cm, 2*cm, 2*cm])
+    ann_tbl.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0), (-1,0),  C_DARK),
+        ('TEXTCOLOR',     (0,0), (-1,0),  colors.white),
+        ('ROWBACKGROUNDS',(0,1), (-1,-1), [colors.white, colors.HexColor('#F8F9FA')]),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#CCCCCC')),
+        ('LEFTPADDING',   (0,0), (-1,-1), 5),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 5),
+        ('TOPPADDING',    (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('ALIGN', (1,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ]))
+    story.append(ann_tbl)
+
+    # CTA final
+    story.append(Spacer(1, 1*cm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=C_GRAY))
+    story.append(Spacer(1, 0.3*cm))
+    cta_txt = (
+        "Pentru o analiza mai profunda sau programe de dezvoltare pentru echipa dvs., "
+        "contactati-ma direct pe LinkedIn: linkedin.com/in/razvanghebaur"
+        if lang == "Română" else
+        "For a deeper analysis or development programmes for your team, "
+        "contact me directly on LinkedIn: linkedin.com/in/razvanghebaur"
+    )
+    story.append(Paragraph(cta_txt, ParagraphStyle('cta', fontSize=9, fontName='Helvetica',
+                 textColor=colors.HexColor('#2471A3'), leading=14)))
+
+    doc.build(story, onFirstPage=header_footer, onLaterPages=header_footer)
+    buf.seek(0)
+    return buf.read()
+
+
+def render_pdf_button(df, G, fi, lang, salary, key_suffix=""):
+    """Render the PDF download button — call inside each tab after upload."""
+    st.markdown("---")
+    team_name = st.text_input(
+        "Echipa / Departament (opțional)" if lang == "Română" else "Team / Department (optional)",
+        key=f"team_name_{key_suffix}",
+        placeholder="Ex: Echipa Vânzări Q2" if lang == "Română" else "E.g. Sales Team Q2"
+    )
+    btn_label = "📄 Descarcă raport PDF" if lang == "Română" else "📄 Download PDF report"
+    with st.spinner("Se generează PDF..." if lang == "Română" else "Generating PDF..."):
+        pdf_bytes = generate_pdf_report(df, G, fi, lang, salary, team_name)
+    fname = f"TeamScientist_Diagnostic_{datetime.now().strftime('%Y%m%d')}.pdf"
+    st.download_button(
+        label=btn_label,
+        data=pdf_bytes,
+        file_name=fname,
+        mime="application/pdf",
+        use_container_width=True,
+        key=f"pdf_dl_{key_suffix}"
+    )
+
 
 def render_landing_page(lang, template_bytes):
     if lang == "Română":
@@ -741,56 +1538,92 @@ def render_landing_page(lang, template_bytes):
 <div style='max-width:780px;margin:0 auto;padding:2rem 0 0.5rem;'>
   <div style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.2rem;'>🔬 TeamScientist</div>
   <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
-    Mă numesc <strong>Răzvan Ghebaur</strong> și de peste 20 de ani ajut manageri și antreprenori să creeze și să mențină echipe eficiente.
+    Mă numesc <strong>Răzvan Ghebaur</strong> și de peste 20 de ani lucrez împreună cu manageri și antreprenori care vor să creeze și să mențină echipe eficiente și sănătoase relațional.
   </p>
   <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
-    Vă invit să testați un instrument care vă arată concret ce funcționează bine în echipa dvs., dar și ce pierderi financiare vin din comportamentele care nu susțin performanța. Veți avea nevoie de 15–20 de minute să adunați câteva date anonimizate pe care le aveți la îndemână. Veți primi în schimb o diagnoză valoroasă și un set de acțiuni concrete de management pe care să le puneți în practică.
+    Vă invit să testați un instrument care vă arată concret ce funcționează bine în echipa dvs., dar și ce pierderi ascunse pot exista.
   </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 0.5rem;'><strong>Cum funcționează?</strong></p>
   <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
-    Dacă aveți în coordonare directă între <strong>8 și 20 de oameni</strong> — acest instrument este pentru dvs.
+    Veți avea nevoie de 15–20 de minute să adunați câteva date anonimizate pe care în mod normal le aveți deja la îndemână. Apoi veți încărca tabelul în spațiul dedicat de mai jos.
   </p>
-  <p style='font-size:17px;line-height:1.8;margin:0 0 1.5rem;'>
-    Cei care testează acum și vor să rămână la curent cu evoluția instrumentului sunt bineveniți să mă contacteze direct pe <a href='https://linkedin.com/in/razvanghebaur' target='_blank' style='color:#2471A3;'>LinkedIn</a>.
+  <p style='font-size:17px;line-height:1.8;margin:0 0 0.5rem;'><strong>Ce veți primi în schimb?</strong></p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    O diagnoză valoroasă și un set de acțiuni concrete de management pe care să le puneți în practică se vor afișa automat, imediat ce ați încărcat tabelul cu datele anonimizate.
   </p>
-  <div style='border-left:3px solid rgba(128,128,128,0.25);padding:0.75rem 1.1rem;margin:0 0 0.5rem;background:rgba(128,128,128,0.04);border-radius:0 8px 8px 0;'>
-    <p style='font-size:13px;line-height:1.7;margin:0;opacity:0.75;'>
-      💡 La finalul diagnosticului veți găsi un formular scurt de feedback — 2 minute, anonim.
-    </p>
-  </div>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 0.75rem;'>
+    Veți primi răspunsuri și sugestii acționabile la următoarele întrebări importante pentru orice manager interesat de propria echipă și de rezultatele ei:
+  </p>
 </div>""", unsafe_allow_html=True)
     else:
         st.markdown("""
 <div style='max-width:780px;margin:0 auto;padding:2rem 0 0.5rem;'>
   <div style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.2rem;'>🔬 TeamScientist</div>
   <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
-    My name is <strong>Răzvan Ghebaur</strong> and for over 20 years I have been helping managers and entrepreneurs build and maintain efficient teams.
+    My name is <strong>Răzvan Ghebaur</strong> and for over 20 years I have been working alongside managers and entrepreneurs who want to build and maintain efficient, relationally healthy teams.
   </p>
   <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
-    I invite you to test an instrument that shows you concretely what is working well in your team, and what financial losses come from behaviours that don't support performance. You'll need 15–20 minutes to gather some anonymised data you already have at hand. In return, you'll receive a valuable diagnosis and a concrete set of management actions to put into practice.
+    I invite you to test an instrument that shows you concretely what is working well in your team — and what hidden losses may exist.
   </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 0.5rem;'><strong>How does it work?</strong></p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    You will need 15–20 minutes to gather a few anonymised data points you already have at hand. Then you upload the table in the dedicated space below.
+  </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 0.5rem;'><strong>What will you receive in return?</strong></p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    A valuable diagnosis and a set of concrete management actions will appear automatically as soon as you upload the table with the anonymised data.
+  </p>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 0.75rem;'>
+    You will receive answers and actionable suggestions to the following questions — important for any manager who cares about their team and its results:
+  </p>
+</div>""", unsafe_allow_html=True)
+
+    # ── CELE 4 CASETE ─────────────────────────────────────────
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        if lang == "Română":
+            st.markdown("<div style='background:#FCEBEB;border-radius:12px;padding:1.25rem;border:1px solid #F09595;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>🔥</div><p style='font-size:14px;font-weight:600;color:#A32D2D;margin:0 0 8px;'>Cine prezintă stres ridicat și risc de burnout?</p><p style='font-size:13px;line-height:1.55;color:#791F1F;margin:0;'>Identifici cine lucrează peste limită și cine are energia în scădere — înainte ca problema să devină vizibilă.</p></div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='background:#FCEBEB;border-radius:12px;padding:1.25rem;border:1px solid #F09595;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>🔥</div><p style='font-size:14px;font-weight:600;color:#A32D2D;margin:0 0 8px;'>Who shows elevated stress and burnout risk?</p><p style='font-size:13px;line-height:1.55;color:#791F1F;margin:0;'>Identify who is working beyond their limit and whose energy is declining — before it becomes a visible problem.</p></div>", unsafe_allow_html=True)
+    with c2:
+        if lang == "Română":
+            st.markdown("<div style='background:#FAEEDA;border-radius:12px;padding:1.25rem;border:1px solid #FAC775;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>✈️</div><p style='font-size:14px;font-weight:600;color:#854F0B;margin:0 0 8px;'>Cine se gândește la plecare?</p><p style='font-size:13px;line-height:1.55;color:#633806;margin:0;'>Afli cine are factori de risc și cât te-ar costa înlocuirea — cu cifre, nu cu presupuneri.</p></div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='background:#FAEEDA;border-radius:12px;padding:1.25rem;border:1px solid #FAC775;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>✈️</div><p style='font-size:14px;font-weight:600;color:#854F0B;margin:0 0 8px;'>Who is thinking about leaving?</p><p style='font-size:13px;line-height:1.55;color:#633806;margin:0;'>Find out who has risk factors and what replacement would cost — with numbers, not assumptions.</p></div>", unsafe_allow_html=True)
+    with c3:
+        if lang == "Română":
+            st.markdown("<div style='background:#E1F5EE;border-radius:12px;padding:1.25rem;border:1px solid #5DCAA5;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>🕸️</div><p style='font-size:14px;font-weight:600;color:#0F6E56;margin:0 0 8px;'>Cum arată rețeaua informală de relații din echipa mea?</p><p style='font-size:13px;line-height:1.55;color:#085041;margin:0;'>Descoperi cine sunt persoanele-cheie, cine e izolat și unde există silozuri de colaborare.</p></div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='background:#E1F5EE;border-radius:12px;padding:1.25rem;border:1px solid #5DCAA5;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>🕸️</div><p style='font-size:14px;font-weight:600;color:#0F6E56;margin:0 0 8px;'>What does my team's informal relationship network look like?</p><p style='font-size:13px;line-height:1.55;color:#085041;margin:0;'>Discover who the key people are, who is isolated, and where collaboration silos exist.</p></div>", unsafe_allow_html=True)
+    with c4:
+        if lang == "Română":
+            st.markdown("<div style='background:#F3EEF9;border-radius:12px;padding:1.25rem;border:1px solid #C39BD3;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>🤐</div><p style='font-size:14px;font-weight:600;color:#6C3483;margin:0 0 8px;'>Cine are o mască politicoasă exagerată?</p><p style='font-size:13px;line-height:1.55;color:#512E7F;margin:0;'>Afli cine din echipă se ferește să vină cu idei și să-și asume erori.</p></div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='background:#F3EEF9;border-radius:12px;padding:1.25rem;border:1px solid #C39BD3;height:100%;'><div style='font-size:22px;margin-bottom:10px;'>🤐</div><p style='font-size:14px;font-weight:600;color:#6C3483;margin:0 0 8px;'>Who is wearing an exaggerated polite mask?</p><p style='font-size:13px;line-height:1.55;color:#512E7F;margin:0;'>Find out who in the team avoids sharing ideas and owning mistakes.</p></div>", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
+
+    # ── TARGET / CINE E PENTRU DVS ────────────────────────────
+    if lang == "Română":
+        st.markdown("""
+<div style='max-width:780px;margin:0 auto 1.5rem;'>
+  <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
+    Dacă aveți în coordonare directă între <strong>8 și 20 de oameni</strong> — acest instrument este pentru dvs.
+  </p>
+  <p style='font-size:17px;line-height:1.8;margin:0;'>
+    Dacă doriți să rămâneți la curent cu evoluția instrumentului sau vreți pur și simplu să oferiți sugestii și feedback, sunteți bineveniți să mă contactați direct pe <a href='https://linkedin.com/in/razvanghebaur' target='_blank' style='color:#2471A3;'>LinkedIn</a>.
+  </p>
+</div>""", unsafe_allow_html=True)
+    else:
+        st.markdown("""
+<div style='max-width:780px;margin:0 auto 1.5rem;'>
   <p style='font-size:17px;line-height:1.8;margin:0 0 1rem;'>
     If you directly manage between <strong>8 and 20 people</strong> — this instrument is for you.
   </p>
-  <p style='font-size:17px;line-height:1.8;margin:0 0 1.5rem;'>
-    Those who test now and want to stay informed about the instrument's evolution are welcome to contact me directly on <a href='https://linkedin.com/in/razvanghebaur' target='_blank' style='color:#2471A3;'>LinkedIn</a>.
+  <p style='font-size:17px;line-height:1.8;margin:0;'>
+    If you would like to stay informed about the instrument's evolution or simply share suggestions and feedback, you are welcome to contact me directly on <a href='https://linkedin.com/in/razvanghebaur' target='_blank' style='color:#2471A3;'>LinkedIn</a>.
   </p>
-  <div style='border-left:3px solid rgba(128,128,128,0.25);padding:0.75rem 1.1rem;margin:0 0 0.5rem;background:rgba(128,128,128,0.04);border-radius:0 8px 8px 0;'>
-    <p style='font-size:13px;line-height:1.7;margin:0;opacity:0.75;'>
-      💡 At the end of the diagnostic you will find a short feedback form — 2 minutes, anonymous.
-    </p>
-  </div>
 </div>""", unsafe_allow_html=True)
-
-    # ── CE CÂȘTIGI ────────────────────────────────────────────
-    st.markdown(f"<p style='font-size:13px;font-weight:500;color:#888;letter-spacing:0.06em;text-transform:uppercase;margin:1.5rem 0 0.75rem;'>{'Ce câștigi' if lang=='Română' else 'What you gain'}</p>", unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("<div style='background:#FCEBEB;border-radius:12px;padding:1.25rem;border:1px solid #F09595;'><div style='font-size:22px;margin-bottom:10px;'>🔥</div><p style='font-size:14px;font-weight:600;color:#A32D2D;margin:0 0 8px;'>Previi burnout-ul</p><p style='font-size:13px;line-height:1.55;color:#791F1F;margin:0;'>Identifici cine lucrează peste limită și cine are energia în scădere — înainte ca problema să devină vizibilă.</p></div>" if lang=="Română" else "<div style='background:#FCEBEB;border-radius:12px;padding:1.25rem;border:1px solid #F09595;'><div style='font-size:22px;margin-bottom:10px;'>🔥</div><p style='font-size:14px;font-weight:600;color:#A32D2D;margin:0 0 8px;'>Prevent burnout</p><p style='font-size:13px;line-height:1.55;color:#791F1F;margin:0;'>Identify who is working beyond their limit and whose energy is declining — before it becomes a visible problem.</p></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown("<div style='background:#FAEEDA;border-radius:12px;padding:1.25rem;border:1px solid #FAC775;'><div style='font-size:22px;margin-bottom:10px;'>✈️</div><p style='font-size:14px;font-weight:600;color:#854F0B;margin:0 0 8px;'>Reduci riscul de plecare</p><p style='font-size:13px;line-height:1.55;color:#633806;margin:0;'>Afli cine are factori de risc și cât te-ar costa înlocuirea — cu cifre, nu cu presupuneri.</p></div>" if lang=="Română" else "<div style='background:#FAEEDA;border-radius:12px;padding:1.25rem;border:1px solid #FAC775;'><div style='font-size:22px;margin-bottom:10px;'>✈️</div><p style='font-size:14px;font-weight:600;color:#854F0B;margin:0 0 8px;'>Reduce leaving risk</p><p style='font-size:13px;line-height:1.55;color:#633806;margin:0;'>Find out who has risk factors and what replacement would cost — with numbers, not assumptions.</p></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown("<div style='background:#E1F5EE;border-radius:12px;padding:1.25rem;border:1px solid #5DCAA5;'><div style='font-size:22px;margin-bottom:10px;'>🕸️</div><p style='font-size:14px;font-weight:600;color:#0F6E56;margin:0 0 8px;'>Vezi rețeaua de relații din echipă</p><p style='font-size:13px;line-height:1.55;color:#085041;margin:0;'>Descoperi cine sunt persoanele-cheie la care apelează cei mai mulți din echipă, cine e izolat și unde există grupuri sau persoane care nu colaborează între ele.</p></div>" if lang=="Română" else "<div style='background:#E1F5EE;border-radius:12px;padding:1.25rem;border:1px solid #5DCAA5;'><div style='font-size:22px;margin-bottom:10px;'>🕸️</div><p style='font-size:14px;font-weight:600;color:#0F6E56;margin:0 0 8px;'>See the relationship network</p><p style='font-size:13px;line-height:1.55;color:#085041;margin:0;'>Discover who the key people are that most of the team turns to, who is isolated, and where groups or individuals are not collaborating.</p></div>", unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top:2rem'></div>", unsafe_allow_html=True)
 
@@ -827,7 +1660,7 @@ def render_landing_page(lang, template_bytes):
             f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>"
             f"<span style='{num_style}'>2</span>"
             f"<div><p style='font-size:13px;color:#888;margin:0;'>{'Pasul 2' if lang=='Română' else 'Step 2'}</p>"
-            f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Încarcă fișierul completat' if lang=='Română' else 'Upload the completed file'}</p></div></div>"
+            f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Încarcă XLS completat' if lang=='Română' else 'Upload completed XLS'}</p></div></div>"
             f"<p style='font-size:13px;color:#888;margin:0 0 8px;'>{'30 secunde' if lang=='Română' else '30 seconds'}</p>"
             f"<p style='font-size:15px;line-height:1.6;opacity:0.85;margin:0 0 1rem;'>{'Încarcă fișierul completat direct în aplicație. Diagnosticul se generează automat.' if lang=='Română' else 'Upload the completed file directly into the application. The diagnostic is generated automatically.'}"
             f"</p></div>", unsafe_allow_html=True)
@@ -842,9 +1675,9 @@ def render_landing_page(lang, template_bytes):
             f"<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>"
             f"<span style='{num_style}'>3</span>"
             f"<div><p style='font-size:13px;color:#888;margin:0;'>{'Pasul 3' if lang=='Română' else 'Step 3'}</p>"
-            f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Explorează diagnosticul' if lang=='Română' else 'Explore the diagnostic'}</p></div></div>"
+            f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Explorează și descarcă diagnosticul' if lang=='Română' else 'Explore and download the diagnostic'}</p></div></div>"
             f"<p style='font-size:13px;color:#888;margin:0 0 8px;'>{'cât vrei' if lang=='Română' else 'as long as you want'}</p>"
-            f"<p style='font-size:15px;line-height:1.6;opacity:0.85;margin:0;'>{'5 tab-uri cu vizualizări clare și recomandări concrete. De la rezumat executiv până la harta relațiilor din echipă.' if lang=='Română' else '5 tabs with clear visualizations and concrete recommendations. From executive summary to the team relationship map.'}"
+            f"<p style='font-size:15px;line-height:1.6;opacity:0.85;margin:0;'>{'5 tab-uri cu vizualizări clare și recomandări concrete. La final, descarcă raportul PDF complet al diagnosticului.' if lang=='Română' else '5 tabs with clear visualizations and concrete recommendations. Download the full PDF diagnostic report when ready.'}"
             f"</p></div>", unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
@@ -948,23 +1781,24 @@ if uploaded_file:
 
         # Text ghid tab-uri
         tab_guide = (
-            "👇 **Diagnosticul echipei dvs. este gata.** Explorați rezultatele în cele 5 tab-uri de mai jos — dați click pe fiecare pentru detalii."
+            "👇 **Diagnosticul echipei dvs. este gata.** Explorați rezultatele în cele 5 tab-uri de mai jos. Începeți cu **Rezumat & Acțiuni** pentru o imagine de ansamblu, apoi aprofundați fiecare dimensiune."
             if lang == "Română" else
-            "👇 **Your diagnostic is ready.** Explore the results in the 5 tabs below — click each one for details."
+            "👇 **Your diagnostic is ready.** Explore the results in the 5 tabs below. Start with **Summary & Actions** for an overview, then dive into each dimension."
         )
         st.info(tab_guide)
 
         # TABS
         tab_labels = (
-            ["🧩 Insights", "🔥 Stres & Burnout", "🤐 Masca Politicoasă", "✈️ Risc Plecare", "🕸️ Rețeaua de Relații"]
+            ["📋 Rezumat & Acțiuni", "🔥 Stres & Burnout", "🤐 Masca Politicoasă", "✈️ Risc Plecare", "🕸️ Rețeaua de Relații"]
             if lang == "Română" else
-            ["🧩 Insights", "🔥 Stress & Burnout", "🤐 Polite Mask", "✈️ Leaving Risk", "🕸️ Relationship Network"]
+            ["📋 Summary & Actions", "🔥 Stress & Burnout", "🤐 Polite Mask", "✈️ Leaving Risk", "🕸️ Relationship Network"]
         )
         tab1, tab2, tab3, tab4, tab5 = st.tabs(tab_labels)
 
         # TAB 1: INSIGHTS
         with tab1:
             render_insights_tab(df, G, lang, salary, fi)
+            render_pdf_button(df, G, fi, lang, salary, key_suffix="tab1")
 
         # TAB 2: STRES & BURNOUT
         with tab2:
@@ -994,6 +1828,7 @@ if uploaded_file:
                                 height=max(420, len(df)*26), margin=dict(l=10,r=50,t=20,b=20),
                                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig_b, use_container_width=True)
+            render_pdf_button(df, G, fi, lang, salary, key_suffix="tab2")
 
         # TAB 3: MASCA POLITICOASĂ
         with tab3:
@@ -1044,6 +1879,7 @@ if uploaded_file:
             fig_s.update_layout(height=500, margin=dict(l=10,r=10,t=20,b=20),
                                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig_s, use_container_width=True)
+            render_pdf_button(df, G, fi, lang, salary, key_suffix="tab3")
 
         # TAB 4: RISC PLECARE
         with tab4:
@@ -1089,6 +1925,7 @@ if uploaded_file:
                     st.markdown(f"**{'Cost estimat înlocuire — membri cu risc ridicat' if lang=='Română' else 'Estimated replacement cost — high-risk members'}**")
                     high_risk.columns = ['Cod' if lang=='Română' else 'Code', 'Scor risc' if lang=='Română' else 'Risk score', 'Cost estimat' if lang=='Română' else 'Estimated cost']
                     st.dataframe(high_risk, hide_index=True, use_container_width=True)
+            render_pdf_button(df, G, fi, lang, salary, key_suffix="tab4")
 
         # TAB 5: REȚEAUA DE RELAȚII
         with tab5:
@@ -1129,6 +1966,7 @@ if uploaded_file:
                 margin=dict(l=20,r=20,t=20,b=20),
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig_ona, use_container_width=True)
+            render_pdf_button(df, G, fi, lang, salary, key_suffix="tab5")
 
         # ── SURVEY BANNER ─────────────────────────────────────
         st.markdown("---")
