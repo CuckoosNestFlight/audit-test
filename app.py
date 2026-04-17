@@ -1118,17 +1118,20 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
         all_w3.append(t_txt["action_isolated"].format(name=row['Nume']))
 
     if any([all_w1, all_w2, all_w3]):
+        pdf_w1_label = "! Prioritar — aceasta saptamana" if lang == "Română" else "! Priority — this week"
+        pdf_w2_label = "- Important — in 30 de zile"   if lang == "Română" else "- Important — within 30 days"
+        pdf_w3_label = "+ De monitorizat"               if lang == "Română" else "+ To monitor"
         story.append(Paragraph(f"* {t_txt['action_title']}", s_h2))
         if all_w1:
-            story.append(Paragraph(f"<b>{t_txt['action_w1']}</b>", s_body))
+            story.append(Paragraph(f"<b>{pdf_w1_label}</b>", s_body))
             for a in all_w1[:3]:
                 story.append(pdf_insight_block(a, "critical"))
         if all_w2:
-            story.append(Paragraph(f"<b>{t_txt['action_w2']}</b>", s_body))
+            story.append(Paragraph(f"<b>{pdf_w2_label}</b>", s_body))
             for a in all_w2[:3]:
                 story.append(pdf_insight_block(a, "warning"))
         if all_w3:
-            story.append(Paragraph(f"<b>{t_txt['action_w3']}</b>", s_body))
+            story.append(Paragraph(f"<b>{pdf_w3_label}</b>", s_body))
             for a in all_w3[:3]:
                 story.append(pdf_insight_block(a, "ok"))
 
