@@ -7,3 +7,4 @@ numpy
 gspread
 google-auth
 reportlab
+matplotlib
