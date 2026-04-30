@@ -1595,16 +1595,28 @@ def render_landing_page(lang, template_bytes):
         st.markdown("""
 <div style='max-width:800px;margin:0 auto;padding:2rem 0 0.5rem;'>
   <div style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.4rem;'>🔬 TeamScientist</div>
+  <p style='font-size:17px;line-height:1.85;margin:0 0 0.6rem;'>
+    Mă numesc <strong>Răzvan Ghebaur</strong> și de peste 20 de ani lucrez cu manageri care vor să înțeleagă ce se întâmplă cu adevărat în echipele lor — înainte ca problemele să devină vizibile.
+  </p>
+  <p style='font-size:17px;line-height:1.85;margin:0 0 0.6rem;'>
+    Am construit TeamScientist cu dorința de a fi un companion de încredere pentru orice manager de oameni, la intersecția dintre psihologia grupurilor și știința datelor, complementar rapoartelor HR, consultanței sau trainingului.
+  </p>
   <p style='font-size:17px;line-height:1.85;margin:0 0 1.2rem;'>
-    Mă numesc <strong>Răzvan Ghebaur</strong> și de peste 20 de ani lucrez cu manageri care vor să înțeleagă ce se întâmplă cu adevărat în echipele lor — înainte ca problemele să devină vizibile. Am construit TeamScientist ca un companion de încredere, la intersecția dintre psihologia grupurilor și știința datelor, complementar rapoartelor HR, consultanței sau trainingului. Ca să acționezi mai devreme, mai informat, mai sigur pe tine — cu datele tale, în ritmul tău.
+    Ca să poți să acționezi mai devreme, mai informat, mai sigur pe tine — cu datele tale, în ritmul tău.
   </p>
 </div>""", unsafe_allow_html=True)
     else:
         st.markdown("""
 <div style='max-width:800px;margin:0 auto;padding:2rem 0 0.5rem;'>
   <div style='font-size:12px;font-weight:500;color:#888;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.4rem;'>🔬 TeamScientist</div>
+  <p style='font-size:17px;line-height:1.85;margin:0 0 0.6rem;'>
+    My name is <strong>Răzvan Ghebaur</strong> and for over 20 years I have been working with managers who want to understand what is really happening in their teams — before problems become visible.
+  </p>
+  <p style='font-size:17px;line-height:1.85;margin:0 0 0.6rem;'>
+    I built TeamScientist with the goal of being a trusted companion for any people manager, at the intersection of group psychology and data science, complementary to HR reports, consulting or training.
+  </p>
   <p style='font-size:17px;line-height:1.85;margin:0 0 1.2rem;'>
-    My name is <strong>Răzvan Ghebaur</strong> and for over 20 years I have been working with managers who want to understand what is really happening in their teams — before problems become visible. I built TeamScientist as a trusted companion, at the intersection of group psychology and data science, complementary to HR reports, consulting or training. To act earlier, better informed, more confident — with your data, at your pace.
+    To act earlier, better informed, more confident — with your data, at your pace.
   </p>
 </div>""", unsafe_allow_html=True)
 
@@ -1883,14 +1895,6 @@ if uploaded_file:
             height=0
         )
 
-        # Text ghid tab-uri
-        tab_guide = (
-            "👇 **Diagnosticul echipei dvs. este gata.** Explorați rezultatele în cele 5 tab-uri de mai jos. Începeți cu **Rezumat & Acțiuni** pentru o imagine de ansamblu, apoi aprofundați fiecare dimensiune."
-            if lang == "Română" else
-            "👇 **Your diagnostic is ready.** Explore the results in the 5 tabs below. Start with **Summary & Actions** for an overview, then dive into each dimension."
-        )
-        st.info(tab_guide)
-
         # TABS
         # ── TAB LABELS — new order: Rețea → Mască → Burnout → Plecare → Rezumat
         tab_labels = (
@@ -1898,12 +1902,9 @@ if uploaded_file:
             if lang == "Română" else
             ["🕸️ Relationship Network", "🤐 Polite Mask", "🔥 Stress & Burnout", "✈️ Leaving Risk", "📋 Summary & Actions"]
         )
-        tab_guide = (
-            "👇 **Analiza echipei tale este gata.** Explorați rezultatele în cele 4 secțiuni de mai jos — de la cauza structurală la simptome. La final, **Rezumat & Acțiuni** vă oferă tabloul complet și ce puteți face concret."
-            if lang == "Română" else
-            "👇 **Your team analysis is ready.** Explore the results in the 4 sections below — from structural cause to symptoms. At the end, **Summary & Actions** gives you the full picture and what you can do concretely."
-        )
-        st.info(tab_guide)
+        tab_guide_ro = "👇 **Analiza echipei este gata.** Explorați rezultatele în secțiunile de mai jos — de la cauza structurală la simptome. La final, **Rezumat & Acțiuni** vă oferă tabloul complet și ce puteți face concret."
+        tab_guide_en = "👇 **Your team analysis is ready.** Explore the results in the sections below — from structural cause to symptoms. At the end, **Summary & Actions** gives you the full picture and what you can do concretely."
+        st.info(tab_guide_ro if lang == "Română" else tab_guide_en)
 
         tab1, tab2, tab3, tab4, tab5 = st.tabs(tab_labels)
 
@@ -1917,7 +1918,7 @@ if uploaded_file:
             # Broker unic
             in_degrees = {node: G.in_degree(node) for node in G.nodes()}
             max_in = max(in_degrees.values()) if in_degrees else 0
-            brokers = [n for n, d in in_degrees.items() if d >= max(3, n*0.4)] if n > 0 else []
+            brokers = [n for n, d in in_degrees.items() if d >= max(3, int(n*0.4))] if n > 0 else []
             # Check if one node has disproportionate centrality
             broker_list = []
             if max_in >= 3 and n > 4:
