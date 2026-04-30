@@ -1918,8 +1918,7 @@ if uploaded_file:
             # Broker unic
             in_degrees = {node: G.in_degree(node) for node in G.nodes()}
             max_in = max(in_degrees.values()) if in_degrees else 0
-            brokers = [n for n, d in in_degrees.items() if d >= max(3, int(n*0.4))] if n > 0 else []
-            # Check if one node has disproportionate centrality
+            # broker_list detectat mai jos — linia de brokers nu mai e necesară
             broker_list = []
             if max_in >= 3 and n > 4:
                 top = sorted(in_degrees.items(), key=lambda x: x[1], reverse=True)
