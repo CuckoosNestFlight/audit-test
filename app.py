@@ -1972,9 +1972,6 @@ if uploaded_file:
         # TAB 1: REȚEAUA DE RELAȚII
         # ════════════════════════════════════════════════════
         with tab1:
-            # Banner financiar
-            render_financial_banner(fi, lang, salary)
-
             st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
 
             # Explicații graf — două coloane
@@ -2167,7 +2164,6 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(127,119,221,0.25);'>
         # TAB 2: MASCA POLITICOASĂ
         # ════════════════════════════════════════════════════
         with tab2:
-            render_financial_banner(fi, lang, salary)
             st.markdown("<div style='margin-top:1rem'></div>", unsafe_allow_html=True)
 
             if lang == "Română":
@@ -2284,7 +2280,6 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(239,159,39,0.3);'>
         # TAB 3: STRES & BURNOUT
         # ════════════════════════════════════════════════════
         with tab3:
-            render_financial_banner(fi, lang, salary)
             st.markdown("<div style='margin-top:1rem'></div>", unsafe_allow_html=True)
 
             if lang == "Română":
@@ -2370,7 +2365,6 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(226,75,74,0.25);'>
         # TAB 4: RISC PLECARE
         # ════════════════════════════════════════════════════
         with tab4:
-            render_financial_banner(fi, lang, salary)
             st.markdown("<div style='margin-top:1rem'></div>", unsafe_allow_html=True)
 
             if lang == "Română":
@@ -2472,7 +2466,6 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(31,56,100,0.2);'>
         # TAB 5: REZUMAT & ACȚIUNI
         # ════════════════════════════════════════════════════
         with tab5:
-            render_financial_banner(fi, lang, salary)
             st.markdown("<div style='margin-top:1rem'></div>", unsafe_allow_html=True)
 
             t = TEXTS[lang]
