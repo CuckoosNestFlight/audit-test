@@ -1055,9 +1055,9 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
     story.append(Paragraph("Cauze posibile si directii de actiune" if lang=="Română" else "Possible causes and directions for action", s_h2))
     _ro = lang == "Română"
     cauze_ona_data = [
-        [Paragraph("<b>" + ("Semnal" if _ro else "Signal") + "</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
-         Paragraph("<b>" + ("Cauze posibile" if _ro else "Possible causes") + "</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
-         Paragraph("<b>" + ("Ce poti face" if _ro else "What you can do") + "</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("<b>Semnal</b>" if _ro else "<b>Signal</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Cauze posibile</b>" if _ro else "<b>Possible causes</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Ce poti face</b>" if _ro else "<b>What you can do</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
         [Paragraph("Izolare ridicata" if _ro else "High isolation", ParagraphStyle('cr', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
          Paragraph("Om nou neintegrat, conflict vechi, rol separat, munca remote fara ritualuri | dificultati personale, dezangajare" if _ro else "New member not integrated, old conflict, separate role, remote without rituals | personal difficulties, disengagement", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
          Paragraph("Creeaza interdependente reale de lucru. Conversatie: 'Observ ca esti mai putin conectat. Ce se intampla?'" if _ro else "Create real work interdependencies. Conversation: 'I notice you're less connected. What's happening?'", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
@@ -1199,9 +1199,9 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
     story.append(Paragraph("Cauze posibile si directii de actiune" if lang=="Română" else "Possible causes and directions for action", s_h2))
     _ro = lang == "Română"
     cauze_masca_data = [
-        [Paragraph("<b>" + ("Semnal" if _ro else "Signal") + "</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
-         Paragraph("<b>" + ("Cauze posibile" if _ro else "Possible causes") + "</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
-         Paragraph("<b>" + ("Ce poti face" if _ro else "What you can do") + "</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("<b>Semnal</b>" if _ro else "<b>Signal</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Cauze posibile</b>" if _ro else "<b>Possible causes</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Ce poti face</b>" if _ro else "<b>What you can do</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
         [Paragraph("Masca generalizata" if _ro else "Generalised mask", ParagraphStyle('cr2', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
          Paragraph("Lipsa siguranta psihologica, reactii negative la feedback, cultura care penalizeaza dezacordul | experienta anterioara negativa" if _ro else "Lack of psychological safety, negative reactions to feedback, culture penalising disagreement | negative previous experience", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
          Paragraph("Normalizeaza dezacordul: 'Ce nu functioneaza?' 1:1-uri fara agenda ascunsa. Cu oamenii tacuti: 'Am impresia ca e ceva ce nu spui.'" if _ro else "Normalise disagreement: 'What isn't working?' 1:1s without hidden agenda. With quiet people: 'I sense there's something you're not saying.'", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
@@ -1292,8 +1292,8 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
     causes_list = burnout_ro if lang=="Română" else burnout_en
     action_txt = burnout_action_ro if lang=="Română" else burnout_action_en
     cauze_b_data = [
-        [Paragraph("<b>Cauze posibile" if lang=="Română" else "<b>Possible causes", ParagraphStyle('ch3', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
-         Paragraph("<b>Ce poti face" if lang=="Română" else "<b>What you can do", ParagraphStyle('ch3', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("<b>Cauze posibile</b>" if lang=="Română" else "<b>Possible causes</b>", ParagraphStyle('ch3', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Ce poti face</b>" if lang=="Română" else "<b>What you can do</b>", ParagraphStyle('ch3', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
         [Paragraph("\n".join(f"• {c}" for c in causes_list), ParagraphStyle('cb3', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12)),
          Paragraph(action_txt, ParagraphStyle('cb3', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12))],
     ]
@@ -1397,8 +1397,8 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
     causes_list_f = plecare_ro if lang=="Română" else plecare_en
     action_txt_f = plecare_action_ro if lang=="Română" else plecare_action_en
     cauze_f_data = [
-        [Paragraph("<b>Cauze posibile" if lang=="Română" else "<b>Possible causes", ParagraphStyle('ch4', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
-         Paragraph("<b>Ce poti face" if lang=="Română" else "<b>What you can do", ParagraphStyle('ch4', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("<b>Cauze posibile</b>" if lang=="Română" else "<b>Possible causes</b>", ParagraphStyle('ch4', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Ce poti face</b>" if lang=="Română" else "<b>What you can do</b>", ParagraphStyle('ch4', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
         [Paragraph("\n".join(f"• {c}" for c in causes_list_f), ParagraphStyle('cb4', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12)),
          Paragraph(action_txt_f, ParagraphStyle('cb4', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12))],
     ]
@@ -2099,7 +2099,7 @@ Each dot represents a team member.
 """)
 
             with col_graf:
-                pos = nx.spring_layout(G, k=2.5, seed=42)
+                pos = nx.spring_layout(G, k=1.2, seed=42)
                 fig_ona = go.Figure()
                 for e in G.edges():
                     x0,y0 = pos[e[0]]; x1,y1 = pos[e[1]]
@@ -2605,6 +2605,32 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(31,56,100,0.2);'>
             # Semnale detectate în ordine ierarhică
             section_header(f"🕸️ {'Semnale detectate' if lang=='Română' else 'Detected signals'}", "#1F3864")
 
+            # Legenda coduri de culoare
+            if lang == "Română":
+                st.markdown(
+                    "<div style='display:flex;gap:20px;align-items:center;padding:8px 12px;"
+                    "background:rgba(128,128,128,0.05);border-radius:8px;margin-bottom:12px;"
+                    "flex-wrap:wrap;'>"
+                    "<span style='font-size:13px;font-weight:500;color:#888;'>Cod de culoare:</span>"
+                    "<span style='font-size:13px;'>🔴 <b>Intervenție imediată</b></span>"
+                    "<span style='font-size:13px;'>🟡 <b>De urmărit</b></span>"
+                    "<span style='font-size:13px;'>🟢 <b>În parametri</b></span>"
+                    "</div>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    "<div style='display:flex;gap:20px;align-items:center;padding:8px 12px;"
+                    "background:rgba(128,128,128,0.05);border-radius:8px;margin-bottom:12px;"
+                    "flex-wrap:wrap;'>"
+                    "<span style='font-size:13px;font-weight:500;color:#888;'>Color code:</span>"
+                    "<span style='font-size:13px;'>🔴 <b>Immediate attention</b></span>"
+                    "<span style='font-size:13px;'>🟡 <b>Monitor</b></span>"
+                    "<span style='font-size:13px;'>🟢 <b>Within range</b></span>"
+                    "</div>",
+                    unsafe_allow_html=True
+                )
+
             # ONA
             with st.expander("🕸️ " + ("Rețeaua de relații" if lang=="Română" else "Relationship network"), expanded=True):
                 any_ona = False
@@ -2636,6 +2662,7 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(31,56,100,0.2);'>
                     signal_block("" , "Nu sunt semnale de alertă pe rețea." if lang=="Română" else "No alert signals on the network.", "ok")
 
                 with st.expander("💡 " + ("Cauze posibile și ce poți face — Rețeaua" if lang=="Română" else "Possible causes and what you can do — Network"), expanded=False):
+                    st.caption("ℹ️ " + ("Informațiile de mai jos sunt generale — aplică-le în funcție de contextul specific al echipei tale." if lang=="Română" else "The information below is general — apply it based on your team's specific context."))
                     if lang == "Română":
                         st.markdown("""
 **Izolare ridicată**
@@ -2687,6 +2714,7 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(31,56,100,0.2);'>
                     signal_block("", "Nu sunt semnale de alertă pe mască." if lang=="Română" else "No alert signals on the mask.", "ok")
 
                 with st.expander("💡 " + ("Cauze posibile și ce poți face — Masca" if lang=="Română" else "Possible causes and what you can do — Mask"), expanded=False):
+                    st.caption("ℹ️ " + ("Informațiile de mai jos sunt generale — aplică-le în funcție de contextul specific al echipei tale." if lang=="Română" else "The information below is general — apply it based on your team's specific context."))
                     if lang == "Română":
                         st.markdown("""
 **Mască generalizată**
@@ -2722,6 +2750,7 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(31,56,100,0.2);'>
                     signal_block("", "Nu sunt semnale de alertă pe burnout." if lang=="Română" else "No alert signals on burnout.", "ok")
 
                 with st.expander("💡 " + ("Cauze posibile și ce poți face — Burnout" if lang=="Română" else "Possible causes and what you can do — Burnout"), expanded=False):
+                    st.caption("ℹ️ " + ("Informațiile de mai jos sunt generale — aplică-le în funcție de contextul specific al echipei tale." if lang=="Română" else "The information below is general — apply it based on your team's specific context."))
                     if lang == "Română":
                         st.markdown("""
 *Cauze posibile:* rețeaua degradată — izolare și lipsă de suport informal, masca ridicată — problemele invizibile s-au acumulat, supraîncărcare cronică | mai multă muncă decât resurse, incertitudine organizațională, compensație sub așteptări | situație personală dificilă, sănătate mentală afectată.
@@ -2745,6 +2774,7 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(31,56,100,0.2);'>
                     signal_block("", "Nu sunt semnale de alertă pe risc de plecare." if lang=="Română" else "No alert signals on leaving risk.", "ok")
 
                 with st.expander("💡 " + ("Cauze posibile și ce poți face — Risc plecare" if lang=="Română" else "Possible causes and what you can do — Leaving risk"), expanded=False):
+                    st.caption("ℹ️ " + ("Informațiile de mai jos sunt generale — aplică-le în funcție de contextul specific al echipei tale." if lang=="Română" else "The information below is general — apply it based on your team's specific context."))
                     if lang == "Română":
                         st.markdown("""
 *Cauze posibile:* izolare în rețea — lipsă de apartenență, mască ridicată — nemulțumirile au rămas invizibile, burnout cronic neadresat | lipsă de oportunități de creștere, compensație sub piață, incertitudine organizațională | ofertă concretă de la altă firmă, decizie personală.
