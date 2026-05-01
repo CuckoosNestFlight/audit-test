@@ -1704,7 +1704,7 @@ def render_landing_page(lang, template_bytes):
     # ── SCHEMA MODEL ─────────────────────────────────────────
     model_svg = """
 <div style='max-width:800px;margin:0 auto 2rem;'>
-<svg width="100%" viewBox="0 0 680 420" role="img" xmlns="http://www.w3.org/2000/svg">
+<svg width="100%" viewBox="0 0 680 450" role="img" xmlns="http://www.w3.org/2000/svg">
   <title>Modelul teoretic TeamScientist</title>
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
