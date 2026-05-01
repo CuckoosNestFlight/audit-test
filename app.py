@@ -1743,13 +1743,13 @@ def render_landing_page(lang, template_bytes):
   <text x="460" y="408" text-anchor="middle" font-size="12" fill="#555" font-family="sans-serif">— și cât ar costa?</text>
   <!-- Legendă -->
   <rect x="150" y="430" width="12" height="12" rx="3" fill="#1D9E75"/>
-  <text x="168" y="441" font-size="11" fill="#666" font-family="sans-serif">cauză structurală</text>
+  <text x="168" y="441" font-size="11" fill="#666" font-family="sans-serif">cauză culturală cheie</text>
   <rect x="268" y="430" width="12" height="12" rx="3" fill="#7F77DD"/>
   <text x="286" y="441" font-size="11" fill="#666" font-family="sans-serif">amplificator</text>
   <rect x="368" y="430" width="12" height="12" rx="3" fill="#EF9F27"/>
   <text x="386" y="441" font-size="11" fill="#666" font-family="sans-serif">simptom</text>
   <rect x="442" y="430" width="12" height="12" rx="3" fill="#E24B4A"/>
-  <text x="460" y="441" font-size="11" fill="#666" font-family="sans-serif">simptom</text>
+  <text x="460" y="441" font-size="11" fill="#666" font-family="sans-serif">consecință</text>
 </svg>
 </div>"""
     if lang == "Română":
@@ -1793,7 +1793,7 @@ def render_landing_page(lang, template_bytes):
   <rect x="390" y="430" width="12" height="12" rx="3" fill="#EF9F27"/>
   <text x="408" y="441" font-size="11" fill="#666" font-family="sans-serif">symptom</text>
   <rect x="465" y="430" width="12" height="12" rx="3" fill="#E24B4A"/>
-  <text x="483" y="441" font-size="11" fill="#666" font-family="sans-serif">symptom</text>
+  <text x="483" y="441" font-size="11" fill="#666" font-family="sans-serif">consequence</text>
 </svg>
 </div>"""
         st.markdown(model_svg_en, unsafe_allow_html=True)
