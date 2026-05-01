@@ -36,27 +36,23 @@ lang = st.session_state.lang
 with st.sidebar.expander("ℹ️ Ce măsurăm" if lang == "Română" else "ℹ️ What we measure", expanded=False):
     if lang == "Română":
         st.markdown("""
-**🧩 Insights** — Sinteza datelor: urgențe, tipare de echipă și acțiuni recomandate.
+**🕸️ Rețeaua de Relații** — Cine consultă pe cine informal. Identifică persoanele-cheie, noduri izolate și silozuri de colaborare. Cauza structurală cheie.
 
-**🔥 Stres & Burnout** — Riscul de epuizare cronică bazat pe ore lucrate, concediu efectuat, energie și presiune externă.
+**🤐 Masca Politicoasă** — Siguranța psihologică: cât de mult se simt oamenii în siguranță să greșească și să propună idei. Amplificatorul.
 
-**🤐 Masca Politicoasă** — Siguranța psihologică: cât de mult se simt oamenii în siguranță să greșească și să propună idei.
+**🔥 Stres & Burnout** — Riscul de epuizare cronică bazat pe ore lucrate, concediu efectuat, energie și presiune externă. Simptom.
 
-**✈️ Risc Plecare** — Probabilitatea de plecare bazată pe stagnare financiară, stare de bine și importanța în rețea.
-
-**🕸️ Rețeaua de Relații** — Cine consultă pe cine informal. Identifică persoanele-cheie, noduri izolate și silozuri de colaborare.
+**✈️ Risc Plecare** — Probabilitatea de plecare bazată pe stagnare financiară, stare de bine și importanța în rețea. Consecință.
 """)
     else:
         st.markdown("""
-**🧩 Insights** — Data synthesis: urgencies, team patterns and recommended actions.
+**🕸️ Relationship Network** — Who consults whom informally. Identifies key people, isolated nodes and collaboration silos. Key structural cause.
 
-**🔥 Stress & Burnout** — Chronic burnout risk based on hours worked, vacation taken, energy and external pressure.
+**🤐 Polite Mask** — Psychological safety: how safe people feel to admit mistakes and propose ideas. The amplifier.
 
-**🤐 Polite Mask** — Psychological safety: how safe people feel to admit mistakes and propose ideas.
+**🔥 Stress & Burnout** — Chronic burnout risk based on hours worked, vacation taken, energy and external pressure. Symptom.
 
-**✈️ Leaving Risk** — Departure probability based on financial stagnation, wellbeing and network importance.
-
-**🕸️ Relationship Network** — Who consults whom informally. Identifies key people, isolated nodes and collaboration silos.
+**✈️ Leaving Risk** — Departure probability based on financial stagnation, wellbeing and network importance. Consequence.
 """)
 
 # ── SIDEBAR — SALARIU ────────────────────────────────────────
@@ -1053,6 +1049,40 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
         story.append(pdf_block("Supraïncarcare nod central: Nu sunt semnale de alerta pe aceasta dimensiune." if lang=="Română"
                                else "Central node overload: No alert signals on this dimension.", "ok"))
 
+
+    # Cauze posibile si rezolvari — Retea (compact)
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Cauze posibile si directii de actiune" if lang=="Română" else "Possible causes and directions for action", s_h2))
+    _ro = lang == "Română"
+    cauze_ona_data = [
+        [Paragraph("<b>" + ("Semnal" if _ro else "Signal") + "</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>" + ("Cauze posibile" if _ro else "Possible causes") + "</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>" + ("Ce poti face" if _ro else "What you can do") + "</b>", ParagraphStyle('ch', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("Izolare ridicata" if _ro else "High isolation", ParagraphStyle('cr', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Om nou neintegrat, conflict vechi, rol separat, munca remote fara ritualuri | dificultati personale, dezangajare" if _ro else "New member not integrated, old conflict, separate role, remote without rituals | personal difficulties, disengagement", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Creeaza interdependente reale de lucru. Conversatie: 'Observ ca esti mai putin conectat. Ce se intampla?'" if _ro else "Create real work interdependencies. Conversation: 'I notice you're less connected. What's happening?'", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+        [Paragraph("Broker unic" if _ro else "Single broker", ParagraphStyle('cr', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Echipa a gravitat spre cel mai competent, lipsa documentatie, nevoie de a fi indispensabil" if _ro else "Team gravitated to most competent, lack of documentation, need to be indispensable", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Redistribuie fluxul de informatii. Conversatie: 'Esti prea solicitat. Hai sa distribuim parte din asta.'" if _ro else "Redistribute information flows. Conversation: 'You're too in demand. Let's distribute some of this.'", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+        [Paragraph("Fragmentare" if _ro else "Fragmentation", ParagraphStyle('cr', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Subgrupuri pe vechime sau proiect, conflict solidificat, reorganizare recenta, comportament de excludere" if _ro else "Subgroups by seniority or project, solidified conflict, recent reorganisation, exclusion behaviour", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Proiecte cross-grup cu livrabil comun. Cultiva oamenii cu conexiuni in ambele subgrupuri." if _ro else "Cross-group projects with shared deliverable. Cultivate people with connections in both subgroups.", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+        [Paragraph("Supraïncarcare" if _ro else "Overload", ParagraphStyle('cr', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Cel mai competent om, cereri canalizate prin el, lipsa resurse, nevoie de a fi indispensabil" if _ro else "Most competent person, requests channelled through them, resource shortage, need to be indispensable", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Redistribuie sarcinile, creeaza redundanta. Conversatie: 'Care e impactul asupra ta?'" if _ro else "Redistribute tasks, create redundancy. Conversation: 'What's the impact on you?'", ParagraphStyle('cb', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+    ]
+    cauze_tbl_ona = Table(cauze_ona_data, colWidths=[3.5*cm, 7*cm, 7*cm])
+    cauze_tbl_ona.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1F3864')),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#F8F9FA')]),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#CCCCCC')),
+        ('LEFTPADDING', (0,0), (-1,-1), 5), ('RIGHTPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('FONTSIZE', (0,0), (-1,-1), 7.5),
+    ]))
+    story.append(cauze_tbl_ona)
+
     story.append(PageBreak())
 
     # ════════════════════════════════════════════════════════
@@ -1139,6 +1169,57 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
         if lang=="Română" else
         "Rarely is there a single cause. Treat what you find as hypotheses to investigate, not as verdicts.",
         s_small))
+    # Cauze posibile — Masca
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Cauze posibile si directii de actiune", s_h2))
+    cauze_masca_data = [
+        [Paragraph("<b>Semnal</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Cauze posibile</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Ce poti face</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("Masca generalizata", ParagraphStyle('cr2', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Lipsa siguranta psihologica, reactii negative la feedback, cultura care penalizeaza dezacordul | experienta anterioara negativa", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Normalizeaza dezacordul: 'Ce nu functioneaza?' 1:1-uri fara agenda ascunsa. Cu oamenii tacuti: 'Am impresia ca e ceva ce nu spui.'", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+        [Paragraph("Masca selectiva", ParagraphStyle('cr2', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Un om care domina/intimideaza in subgrup, conflict localizat, presiune diferita, retinere deliberata de informatii", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Investigheaza mai intai. Conversatii individuale cu membrii subgrupului — separat, nu in grup.", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+    ]
+    cauze_tbl_masca = Table(cauze_masca_data, colWidths=[3.5*cm, 7*cm, 7*cm])
+    cauze_tbl_masca.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1F3864')),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#F8F9FA')]),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#CCCCCC')),
+        ('LEFTPADDING', (0,0), (-1,-1), 5), ('RIGHTPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    story.append(cauze_tbl_masca)
+
+    # Cauze posibile si rezolvari — Masca (compact)
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Cauze posibile si directii de actiune" if lang=="Română" else "Possible causes and directions for action", s_h2))
+    _ro = lang == "Română"
+    cauze_masca_data = [
+        [Paragraph("<b>" + ("Semnal" if _ro else "Signal") + "</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>" + ("Cauze posibile" if _ro else "Possible causes") + "</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>" + ("Ce poti face" if _ro else "What you can do") + "</b>", ParagraphStyle('ch2', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("Masca generalizata" if _ro else "Generalised mask", ParagraphStyle('cr2', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Lipsa siguranta psihologica, reactii negative la feedback, cultura care penalizeaza dezacordul | experienta anterioara negativa" if _ro else "Lack of psychological safety, negative reactions to feedback, culture penalising disagreement | negative previous experience", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Normalizeaza dezacordul: 'Ce nu functioneaza?' 1:1-uri fara agenda ascunsa. Cu oamenii tacuti: 'Am impresia ca e ceva ce nu spui.'" if _ro else "Normalise disagreement: 'What isn't working?' 1:1s without hidden agenda. With quiet people: 'I sense there's something you're not saying.'", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+        [Paragraph("Masca selectiva" if _ro else "Selective mask", ParagraphStyle('cr2', fontSize=7.5, fontName=F_BOLD, textColor=colors.HexColor('#2C3E50'))),
+         Paragraph("Un om care domina/intimideaza in subgrup, conflict localizat, presiune diferita, retinere deliberata de informatii" if _ro else "Person dominating/intimidating in subgroup, localised conflict, different pressure, deliberate information withholding", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11)),
+         Paragraph("Investigheaza mai intai. Conversatii individuale cu membrii subgrupului — separat, nu in grup." if _ro else "Investigate first. Individual conversations with subgroup members — separate, not in a group.", ParagraphStyle('cb2', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=11))],
+    ]
+    cauze_tbl_masca = Table(cauze_masca_data, colWidths=[3.5*cm, 7*cm, 7*cm])
+    cauze_tbl_masca.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1F3864')),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#F8F9FA')]),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#CCCCCC')),
+        ('LEFTPADDING', (0,0), (-1,-1), 5), ('RIGHTPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    story.append(cauze_tbl_masca)
+
     story.append(PageBreak())
 
     # ════════════════════════════════════════════════════════
@@ -1192,6 +1273,41 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
         if lang=="Română" else
         f"Estimated burnout losses: EUR {fi['burnout']:,.0f}/year ({fi['n_burnout_high']} high risk, {fi['n_burnout_med']} warning)",
         s_small))
+
+    # Cauze posibile — Burnout
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Cauze posibile si directii de actiune" if lang=="Română" else "Possible causes and directions for action", s_h2))
+    burnout_ro = [
+        "Retea degradata — izolare si lipsa suport informal, masca ridicata, supraïncarcare cronica",
+        "Munca mai multa decat resurse, incertitudine organizationala, compensatie sub asteptari",
+        "Situatie personala dificila, sanatate mentala afectata"
+    ]
+    burnout_en = [
+        "Degraded network — isolation and lack of informal support, high mask, chronic overload",
+        "More work than resources, organisational uncertainty, below-expectation compensation",
+        "Difficult personal situation, mental health affected"
+    ]
+    burnout_action_ro = "Nu trata burnout-ul direct — trateaza cauza. Conversatie: 'Observ ca esti obosit/distant. Cum esti de fapt?' Daca sursa e externa — escaladeaza cu date."
+    burnout_action_en = "Don't treat burnout directly — treat the cause. Conversation: 'I notice you seem tired/distant. How are you really?' If source is external — escalate with data."
+    causes_list = burnout_ro if lang=="Română" else burnout_en
+    action_txt = burnout_action_ro if lang=="Română" else burnout_action_en
+    cauze_b_data = [
+        [Paragraph("<b>Cauze posibile" if lang=="Română" else "<b>Possible causes", ParagraphStyle('ch3', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Ce poti face" if lang=="Română" else "<b>What you can do", ParagraphStyle('ch3', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("\n".join(f"• {c}" for c in causes_list), ParagraphStyle('cb3', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12)),
+         Paragraph(action_txt, ParagraphStyle('cb3', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12))],
+    ]
+    cauze_tbl_b = Table(cauze_b_data, colWidths=[9*cm, 8.5*cm])
+    cauze_tbl_b.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1F3864')),
+        ('BACKGROUND', (0,1), (-1,1), colors.HexColor('#FEF9E7')),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#CCCCCC')),
+        ('LEFTPADDING', (0,0), (-1,-1), 6), ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    story.append(cauze_tbl_b)
+
     story.append(PageBreak())
 
     # ════════════════════════════════════════════════════════
@@ -1262,6 +1378,41 @@ def generate_pdf_report(df, G, fi, lang, salary, team_name=""):
         if lang=="Română" else
         f"Estimated leaving risk losses: EUR {fi['leaving_min']:,.0f} - EUR {fi['leaving_max']:,.0f} ({fi['n_leaving']} employee(s) high risk)",
         s_small))
+
+    # Cauze posibile — Risc Plecare
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Cauze posibile si directii de actiune" if lang=="Română" else "Possible causes and directions for action", s_h2))
+    plecare_ro = [
+        "Izolare in retea — lipsa de apartenenta, masca ridicata — nemultumirile invizibile, burnout cronic neadresat",
+        "Lipsa oportunitati de crestere, compensatie sub piata, incertitudine organizationala",
+        "Oferta concreta de la alta firma, decizie personala"
+    ]
+    plecare_en = [
+        "Network isolation — lack of belonging, high mask — dissatisfaction stayed invisible, unaddressed chronic burnout",
+        "Lack of growth opportunities, below-market compensation, organisational uncertainty",
+        "Concrete offer from another firm, personal decision"
+    ]
+    plecare_action_ro = "Nu trata plecarea direct — uita-te la ce a generat-o. Conversatie: 'Observ ca ceva s-a schimbat. Cum esti cu rolul tau acum?' Fii onest despre ce poti si ce nu poti schimba. Uneori decizia e deja luata — cel mai valoros lucru e sa pleci bine."
+    plecare_action_en = "Don't treat departure directly — look at what generated it. Conversation: 'I notice something has changed. How are you with your role now?' Be honest about what you can and cannot change. Sometimes the decision is made — the most valuable thing is to part well."
+    causes_list_f = plecare_ro if lang=="Română" else plecare_en
+    action_txt_f = plecare_action_ro if lang=="Română" else plecare_action_en
+    cauze_f_data = [
+        [Paragraph("<b>Cauze posibile" if lang=="Română" else "<b>Possible causes", ParagraphStyle('ch4', fontSize=8, fontName=F_BOLD, textColor=colors.white)),
+         Paragraph("<b>Ce poti face" if lang=="Română" else "<b>What you can do", ParagraphStyle('ch4', fontSize=8, fontName=F_BOLD, textColor=colors.white))],
+        [Paragraph("\n".join(f"• {c}" for c in causes_list_f), ParagraphStyle('cb4', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12)),
+         Paragraph(action_txt_f, ParagraphStyle('cb4', fontSize=7.5, fontName=F_NORMAL, textColor=colors.HexColor('#2C3E50'), leading=12))],
+    ]
+    cauze_tbl_f = Table(cauze_f_data, colWidths=[9*cm, 8.5*cm])
+    cauze_tbl_f.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1F3864')),
+        ('BACKGROUND', (0,1), (-1,1), colors.HexColor('#FDEDEC')),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#CCCCCC')),
+        ('LEFTPADDING', (0,0), (-1,-1), 6), ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    story.append(cauze_tbl_f)
+
     story.append(PageBreak())
 
     # ════════════════════════════════════════════════════════
@@ -1517,7 +1668,7 @@ def render_landing_page(lang, template_bytes):
     Instrumentul urmează o logică de sistem cu trei niveluri, de la cauză la efect:
   </p>
   <p style='font-size:16px;line-height:1.8;margin:0 0 0.4rem;'>
-    <strong>Rețeaua de relații</strong> — cauza structurală. Izolarea, dependența de un singur om, fragmentarea în subgrupuri — acestea generează adesea simptomele unei echipe care nu funcționează, cu mult înainte să devină vizibile.
+    <strong>Rețeaua de relații</strong> — cauza structurală cheie. Izolarea, dependența de un singur om, fragmentarea în subgrupuri — acestea generează adesea simptomele unei echipe care nu funcționează, cu mult înainte să devină vizibile.
   </p>
   <p style='font-size:16px;line-height:1.8;margin:0 0 0.4rem;'>
     <strong>Masca politicoasă</strong> — amplificatorul. Când oamenii nu se simt în siguranță să spună ce gândesc, problemele rămân invizibile și se agravează.
@@ -1537,7 +1688,7 @@ def render_landing_page(lang, template_bytes):
     The instrument follows a systems logic with three levels, from cause to effect:
   </p>
   <p style='font-size:16px;line-height:1.8;margin:0 0 0.4rem;'>
-    <strong>Relationship network</strong> — the structural cause. Isolation, dependency on a single person, fragmentation into subgroups — these often generate symptoms of a dysfunctional team, long before they become visible.
+    <strong>Relationship network</strong> — the key structural cause. Isolation, dependency on a single person, fragmentation into subgroups — these often generate symptoms of a dysfunctional team, long before they become visible.
   </p>
   <p style='font-size:16px;line-height:1.8;margin:0 0 0.4rem;'>
     <strong>Polite mask</strong> — the amplifier. When people don't feel safe to say what they think, problems stay invisible and worsen.
@@ -1601,7 +1752,51 @@ def render_landing_page(lang, template_bytes):
   <text x="460" y="441" font-size="11" fill="#666" font-family="sans-serif">simptom</text>
 </svg>
 </div>"""
-    st.markdown(model_svg, unsafe_allow_html=True)
+    if lang == "Română":
+        st.markdown(model_svg, unsafe_allow_html=True)
+    else:
+        model_svg_en = """
+<div style='max-width:800px;margin:0 auto 2rem;'>
+<svg width="100%" viewBox="0 0 680 450" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>TeamScientist theoretical model</title>
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#aaa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <text x="72" y="108" text-anchor="middle" font-size="11" fill="#999" font-family="sans-serif">LATENT</text>
+  <text x="72" y="122" text-anchor="middle" font-size="11" fill="#999" font-family="sans-serif">STRUCTURE</text>
+  <text x="72" y="235" text-anchor="middle" font-size="11" fill="#999" font-family="sans-serif">BEHAVIOUR</text>
+  <text x="72" y="358" text-anchor="middle" font-size="11" fill="#999" font-family="sans-serif">VISIBLE</text>
+  <text x="72" y="372" text-anchor="middle" font-size="11" fill="#999" font-family="sans-serif">SYMPTOMS</text>
+  <rect x="150" y="80" width="380" height="52" rx="10" fill="#E1F5EE" stroke="#1D9E75" stroke-width="1"/>
+  <text x="340" y="110" text-anchor="middle" font-size="15" font-weight="600" fill="#0F6E56" font-family="sans-serif">Relationship network</text>
+  <text x="340" y="148" text-anchor="middle" font-size="12" fill="#555" font-family="sans-serif">How is the informal network in my team structured?</text>
+  <line x1="340" y1="160" x2="340" y2="200" stroke="#aaa" stroke-width="1" marker-end="url(#arr2)"/>
+  <rect x="150" y="202" width="380" height="52" rx="10" fill="#F3EEF9" stroke="#7F77DD" stroke-width="1"/>
+  <text x="340" y="232" text-anchor="middle" font-size="15" font-weight="600" fill="#6C3483" font-family="sans-serif">Polite mask</text>
+  <text x="340" y="270" text-anchor="middle" font-size="12" fill="#555" font-family="sans-serif">Who avoids saying what they really think?</text>
+  <path d="M250 284 L210 322" fill="none" stroke="#aaa" stroke-width="1" marker-end="url(#arr2)"/>
+  <path d="M430 284 L470 322" fill="none" stroke="#aaa" stroke-width="1" marker-end="url(#arr2)"/>
+  <rect x="110" y="324" width="220" height="52" rx="10" fill="#FAEEDA" stroke="#EF9F27" stroke-width="1"/>
+  <text x="220" y="354" text-anchor="middle" font-size="14" font-weight="600" fill="#854F0B" font-family="sans-serif">Stress &amp; Burnout</text>
+  <text x="220" y="392" text-anchor="middle" font-size="12" fill="#555" font-family="sans-serif">Who is working beyond their limit</text>
+  <text x="220" y="408" text-anchor="middle" font-size="12" fill="#555" font-family="sans-serif">and losing energy?</text>
+  <rect x="350" y="324" width="220" height="52" rx="10" fill="#FCEBEB" stroke="#E24B4A" stroke-width="1"/>
+  <text x="460" y="354" text-anchor="middle" font-size="14" font-weight="600" fill="#A32D2D" font-family="sans-serif">Leaving risk</text>
+  <text x="460" y="392" text-anchor="middle" font-size="12" fill="#555" font-family="sans-serif">Who has reasons to leave</text>
+  <text x="460" y="408" text-anchor="middle" font-size="12" fill="#555" font-family="sans-serif">and what would it cost?</text>
+  <rect x="150" y="430" width="12" height="12" rx="3" fill="#1D9E75"/>
+  <text x="168" y="441" font-size="11" fill="#666" font-family="sans-serif">key structural cause</text>
+  <rect x="295" y="430" width="12" height="12" rx="3" fill="#7F77DD"/>
+  <text x="313" y="441" font-size="11" fill="#666" font-family="sans-serif">amplifier</text>
+  <rect x="390" y="430" width="12" height="12" rx="3" fill="#EF9F27"/>
+  <text x="408" y="441" font-size="11" fill="#666" font-family="sans-serif">symptom</text>
+  <rect x="465" y="430" width="12" height="12" rx="3" fill="#E24B4A"/>
+  <text x="483" y="441" font-size="11" fill="#666" font-family="sans-serif">symptom</text>
+</svg>
+</div>"""
+        st.markdown(model_svg_en, unsafe_allow_html=True)
 
     # ── TARGET + LINKEDIN ─────────────────────────────────────
     if lang == "Română":
@@ -1688,7 +1883,7 @@ def render_landing_page(lang, template_bytes):
             f"<p style='font-size:14px;font-weight:600;color:inherit;margin:0;'>{'Explorează și descarcă raportul' if lang=='Română' else 'Explore and download the report'}</p></div></div>"
             f"<p style='font-size:13px;color:#888;margin:0 0 8px;'>{'cât vrei' if lang=='Română' else 'as long as you want'}</p>"
             f"<p style='font-size:14px;line-height:1.6;opacity:0.85;margin:0;'>"
-            f"{'4 secțiuni cu vizualizări clare, cauze posibile și direcții concrete de acțiune — de la cauza structurală la simptome. În orice moment poți descărca un raport PDF complet.' if lang=='Română' else '4 sections with clear visualizations, possible causes and concrete directions for action — from structural cause to symptoms. You can download a full PDF report at any time.'}"
+            f"{'5 secțiuni cu vizualizări clare, cauze posibile și direcții concrete de acțiune — de la cauza structurală cheie la simptome. În orice moment poți descărca un raport PDF complet.' if lang=='Română' else '5 sections with clear visualizations, possible causes and concrete directions for action — from the key structural cause to symptoms. You can download a full PDF report at any time.'}"
             f"</p></div>", unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top:1rem'></div>", unsafe_allow_html=True)
@@ -1880,8 +2075,9 @@ Fiecare punct reprezintă un membru al echipei.
 
 **Ce să cauți:**
 - Puncte izolate — oameni cu puține sau nicio conexiune
-- Oameni la care apelează toată lumea și care pot fi supraîncărcați
-- Grupuri care nu sunt conectate între ele
+- Oameni la care apelează toată lumea și care pot fi supraîncărcați (brokeri unici)
+- Grupuri care nu sunt conectate între ele (bisericuțe, silozuri)
+- Supraîncărcarea relațională a unor membri cheie (noduri centrale) din echipă
 """)
                 else:
                     st.markdown("""
@@ -1897,12 +2093,13 @@ Each dot represents a team member.
 
 **What to look for:**
 - Isolated dots — people with few or no connections
-- People everyone turns to who may be overloaded
-- Groups that are not connected to each other
+- People everyone turns to who may be overloaded (single brokers)
+- Groups that are not connected to each other (silos, cliques)
+- Relational overload of key members (central nodes) in the team
 """)
 
             with col_graf:
-                pos = nx.spring_layout(G, k=1.2, seed=42)
+                pos = nx.spring_layout(G, k=2.5, seed=42)
                 fig_ona = go.Figure()
                 for e in G.edges():
                     x0,y0 = pos[e[0]]; x1,y1 = pos[e[1]]
@@ -2414,23 +2611,26 @@ margin:1.5rem 0 0.5rem;border:0.5px solid rgba(31,56,100,0.2);'>
                 if ona_signals['izolare']:
                     any_ona = True
                     signal_block("Izolare ridicată" if lang=="Română" else "High isolation",
-                        f"{', '.join(ona_signals['izolare'])} — {'zero sau puține conexiuni funcționale.' if lang=='Română' else 'zero or few functional connections.'}",
+                        f"{', '.join(ona_signals['izolare'])} — {'zero sau puține conexiuni funcționale. Posibilă dezangajare sau excludere informală.' if lang=='Română' else 'zero or few functional connections. Possible disengagement or informal exclusion.'}",
                         "critical" if len(ona_signals['izolare']) > 1 else "warning")
+                    st.markdown("<div style='margin:4px 0'></div>", unsafe_allow_html=True)
                 if ona_signals['broker']:
                     any_ona = True
                     broker_name = ona_signals['broker'][0]
                     signal_block("Broker unic" if lang=="Română" else "Single broker",
-                        f"{broker_name} — {'consultat de ' if lang=='Română' else 'consulted by '}{G.in_degree(broker_name)} {'colegi.' if lang=='Română' else 'colleagues.'}",
+                        f"{broker_name} — {'consultat de ' if lang=='Română' else 'consulted by '}{G.in_degree(broker_name)} {'colegi. Dacă lipsește, comunicarea se poate bloca.' if lang=='Română' else 'colleagues. If absent, communication may break down.'}",
                         "warning")
+                    st.markdown("<div style='margin:4px 0'></div>", unsafe_allow_html=True)
                 if ona_signals['fragmentare']:
                     any_ona = True
-                    signal_block("Fragmentare în subgrupuri" if lang=="Română" else "Fragmentation",
-                        f"{ona_signals['fragmentare_groups']} {'grupuri detectate.' if lang=='Română' else 'groups detected.'}",
+                    signal_block("Fragmentare în subgrupuri" if lang=="Română" else "Fragmentation into subgroups",
+                        f"{ona_signals['fragmentare_groups']} {'grupuri detectate — comunicarea circulă greu între ele.' if lang=='Română' else 'groups detected — communication flows poorly between them.'}",
                         "warning")
+                    st.markdown("<div style='margin:4px 0'></div>", unsafe_allow_html=True)
                 if ona_signals['supraIncarcare']:
                     any_ona = True
                     signal_block("Supraîncărcare nod central" if lang=="Română" else "Central node overload",
-                        f"{', '.join(ona_signals['supraIncarcare'])} — {'stres ridicat + consultat de mulți colegi.' if lang=='Română' else 'elevated stress + consulted by many colleagues.'}",
+                        f"{', '.join(ona_signals['supraIncarcare'])} — {'stres ridicat + consultat de mulți colegi. Posibil la limita capacității.' if lang=='Română' else 'elevated stress + consulted by many colleagues. Possibly at capacity limit.'}",
                         "critical")
                 if not any_ona:
                     signal_block("" , "Nu sunt semnale de alertă pe rețea." if lang=="Română" else "No alert signals on the network.", "ok")
